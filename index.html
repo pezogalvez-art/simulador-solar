@@ -1,0 +1,1670 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Térmico Solar 3D - Prototipo Didáctico Perú</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            overflow: hidden;
+            background: #070a13;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            color: #f1f5f9;
+            user-select: none;
+        }
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+            cursor: grab;
+        }
+        #canvas-container:active {
+            cursor: grabbing;
+        }
+
+        /* Panel Flotante de Control Principal */
+        #ui-panel {
+            position: absolute;
+            top: 18px;
+            left: 18px;
+            width: 360px;
+            max-height: calc(100vh - 36px);
+            overflow-y: auto;
+            background: rgba(15, 23, 42, 0.88);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 18px;
+            padding: 20px;
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.65);
+            z-index: 10;
+        }
+
+        /* Scrollbar estilizada */
+        #ui-panel::-webkit-scrollbar { width: 5px; }
+        #ui-panel::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+
+        .header-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            background: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            padding: 3px 8px;
+            border-radius: 20px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        h1 {
+            font-size: 1.15rem;
+            color: #ffffff;
+            font-weight: 700;
+            line-height: 1.25;
+            margin-bottom: 4px;
+        }
+        .subtitle {
+            font-size: 0.78rem;
+            color: #94a3b8;
+            margin-bottom: 14px;
+            line-height: 1.35;
+        }
+
+        .control-group { margin-bottom: 12px; }
+        label {
+            font-size: 0.78rem;
+            color: #cbd5e1;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        select, input[type=range] {
+            width: 100%;
+            background: #1e293b;
+            color: #f8fafc;
+            border: 1px solid #334155;
+            padding: 8px 10px;
+            border-radius: 8px;
+            outline: none;
+            font-size: 0.85rem;
+            transition: border-color 0.2s;
+        }
+        select:focus { border-color: #38bdf8; }
+        input[type=range] {
+            height: 6px;
+            padding: 0;
+            accent-color: #f59e0b;
+            cursor: pointer;
+        }
+
+        /* Fila de Reproducción del Sol */
+        .play-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 4px;
+        }
+        .btn-play {
+            background: #f59e0b;
+            color: #0f172a;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 7px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s ease;
+        }
+        .btn-play:hover { background: #fbbf24; transform: scale(1.02); }
+        .btn-play.active { background: #ef4444; color: white; }
+
+        /* Tarjeta de Estación Meteorológica SENAMHI */
+        .senamhi-box {
+            background: rgba(14, 116, 144, 0.12);
+            border: 1px solid rgba(14, 165, 233, 0.35);
+            border-radius: 12px;
+            padding: 10px 11px;
+            margin: 8px 0 10px 0;
+            position: relative;
+        }
+        .senamhi-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 3px;
+        }
+        .senamhi-logo {
+            font-size: 0.70rem;
+            font-weight: 800;
+            color: #38bdf8;
+            letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .senamhi-date {
+            font-size: 0.64rem;
+            color: #94a3b8;
+        }
+        .senamhi-station {
+            font-size: 0.76rem;
+            color: #f8fafc;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        .senamhi-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+            background: rgba(15, 23, 42, 0.65);
+            border-radius: 8px;
+            padding: 7px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .senamhi-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .senamhi-lbl {
+            font-size: 0.60rem;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+        .senamhi-data {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #f1f5f9;
+            margin-top: 1px;
+        }
+        .senamhi-nota {
+            font-size: 0.66rem;
+            color: #cbd5e1;
+            margin-top: 6px;
+            line-height: 1.3;
+            border-top: 1px dashed rgba(56, 189, 248, 0.2);
+            padding-top: 4px;
+        }
+
+        /* Tarjetas de Métricas */
+        .metric-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin: 12px 0 8px 0;
+        }
+        .metric-card {
+            background: rgba(30, 41, 59, 0.65);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            padding: 9px 11px;
+            transition: border-color 0.2s;
+        }
+        .metric-card:hover { border-color: rgba(255, 255, 255, 0.2); }
+        .metric-title {
+            font-size: 0.68rem;
+            color: #94a3b8;
+            display: block;
+            margin-bottom: 2px;
+        }
+        .metric-val {
+            font-size: 1.05rem;
+            font-weight: 700;
+        }
+        .val-hot { color: #f87171; }
+        .val-cold { color: #38bdf8; }
+        .val-time { color: #4ade80; }
+        .val-rad  { color: #fbbf24; }
+
+        /* Toggles Didácticos */
+        .toggle-box {
+            background: rgba(30, 41, 59, 0.45);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .toggle-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #cbd5e1;
+            cursor: pointer;
+        }
+        .toggle-item input[type=checkbox] {
+            accent-color: #38bdf8;
+            width: 15px;
+            height: 15px;
+            cursor: pointer;
+        }
+
+        /* Botones para Abrir Modales */
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .btn-modal {
+            flex: 1;
+            background: #2563eb;
+            color: #fff;
+            border: none;
+            padding: 10px;
+            border-radius: 9px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+        .btn-modal:hover { background: #1d4ed8; transform: translateY(-1px); }
+        .btn-sec { background: #334155; }
+        .btn-sec:hover { background: #475569; }
+
+        /* MODALES */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(3, 7, 18, 0.82);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-content {
+            background: #0f172a;
+            border: 1px solid rgba(255,255,255,0.14);
+            border-radius: 18px;
+            width: 100%;
+            max-width: 680px;
+            max-height: 88vh;
+            overflow-y: auto;
+            padding: 26px;
+            position: relative;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.85);
+            color: #f8fafc;
+            animation: modalFadeIn 0.25s ease-out;
+        }
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.96); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .close-btn {
+            position: absolute;
+            top: 16px;
+            right: 20px;
+            font-size: 1.6rem;
+            color: #94a3b8;
+            cursor: pointer;
+            font-weight: 300;
+            line-height: 1;
+            transition: color 0.2s;
+        }
+        .close-btn:hover { color: #ffffff; }
+
+        /* Estilos de las Especificaciones Didácticas */
+        .spec-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-top: 16px;
+        }
+        .spec-card {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 14px 16px;
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+        }
+        .spec-icon {
+            font-size: 1.6rem;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            padding: 8px;
+            line-height: 1;
+        }
+        .spec-body h3 {
+            font-size: 0.92rem;
+            color: #38bdf8;
+            margin-bottom: 4px;
+        }
+        .spec-body p {
+            font-size: 0.8rem;
+            color: #cbd5e1;
+            line-height: 1.5;
+        }
+        .spec-badge {
+            display: inline-block;
+            background: rgba(56, 189, 248, 0.15);
+            color: #7dd3fc;
+            padding: 2px 7px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            margin-top: 6px;
+        }
+
+        /* Guía de navegación 3D en la esquina inferior */
+        #hint-box {
+            position: absolute;
+            bottom: 18px;
+            right: 18px;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 8px 14px;
+            font-size: 0.72rem;
+            color: #94a3b8;
+            pointer-events: none;
+            display: flex;
+            gap: 12px;
+        }
+        #hint-box span { color: #e2e8f0; font-weight: 600; }
+    </style>
+
+    <!-- Librerías 3D y Gráficos -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <!-- PANEL PRINCIPAL FLOTANTE -->
+    <div id="ui-panel">
+        <div class="header-badge">☀️ Energía Renovable</div>
+        <h1>Calentador Solar 200L</h1>
+        <div class="subtitle">Circuito Termosifónico por Radiación Solar · Perú</div>
+
+        <!-- Selector de Ciudades -->
+        <div class="control-group">
+            <label for="select-ciudad">📍 Ubicación en el Perú:</label>
+            <select id="select-ciudad">
+                <option value="Cusco">Cusco (2,300 W/m² - Radiación Muy Alta)</option>
+                <option value="Arequipa">Arequipa (Radiación Extrema / Cielo Despejado)</option>
+                <option value="Puno">Puno (Alta Radiación Solar / Clima Frío)</option>
+                <option value="Ica">Ica (Excelente Sol Todo el Año)</option>
+                <option value="Lima">Lima (Radiación Moderada / Humedad Costera)</option>
+                <option value="Tarapoto">Tarapoto (Clima Cálido / Selva)</option>
+                <option value="Iquitos">Iquitos (Selva Baja Tropical)</option>
+            </select>
+        </div>
+
+        <!-- FICHA OFICIAL ESTACIÓN METEOROLÓGICA SENAMHI -->
+        <div class="senamhi-box">
+            <div class="senamhi-header">
+                <span class="senamhi-logo">🇵🇪 SENAMHI PERÚ</span>
+                <span class="senamhi-date" id="senamhi-fecha">Estación Oficial</span>
+            </div>
+            <div class="senamhi-station" id="senamhi-estacion">📍 Estación: Granja Kayra (Cusco)</div>
+            
+            <div class="senamhi-grid">
+                <div class="senamhi-item">
+                    <span class="senamhi-lbl">🌤️ Condición Cielo</span>
+                    <span class="senamhi-data" id="senamhi-cielo">Despejado</span>
+                </div>
+                <div class="senamhi-item">
+                    <span class="senamhi-lbl">🌡️ Temp. Mín / Máx</span>
+                    <span class="senamhi-data" id="senamhi-trango">4.2° / 21.8 °C</span>
+                </div>
+                <div class="senamhi-item">
+                    <span class="senamhi-lbl">☀️ Rad. Pico / IUV</span>
+                    <span class="senamhi-data" id="senamhi-iuv">980 W/m² (IUV 14)</span>
+                </div>
+                <div class="senamhi-item">
+                    <span class="senamhi-lbl">💨 Viento</span>
+                    <span class="senamhi-data" id="senamhi-viento">12 km/h</span>
+                </div>
+                <div class="senamhi-item">
+                    <span class="senamhi-lbl">💧 Humedad Relativa</span>
+                    <span class="senamhi-data" id="senamhi-humedad">38%</span>
+                </div>
+                <div class="senamhi-item">
+                    <span class="senamhi-lbl">⛰️ Altitud</span>
+                    <span class="senamhi-data" id="senamhi-altitud">3,399 msnm</span>
+                </div>
+            </div>
+            <div class="senamhi-nota" id="senamhi-desc">
+                Gran radiación por altitud andina. Noches y madrugadas frías requieren excelente aislamiento (PUR 50mm).
+            </div>
+        </div>
+
+        <!-- Tarjetas de Métricas de Salida del Calentador -->
+        <div class="metric-grid">
+            <div class="metric-card">
+                <span class="metric-title">🔥 T. Colector (Placa)</span>
+                <span class="metric-val val-hot" id="val-temp-placa">62.5 °C</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-title">💧 T. Agua Caliente</span>
+                <span class="metric-val val-cold" id="val-temp-agua">48.0 °C</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-title">⏱️ Tiempo para 45 °C</span>
+                <span class="metric-val val-time" id="val-tiempo-45">3.1 horas</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-title">⚡ Eficiencia Térmica</span>
+                <span class="metric-val val-rad" id="val-eficiencia">72.8%</span>
+            </div>
+        </div>
+
+        <!-- Control de Hora del Día y Reproductor -->
+        <div class="control-group" style="margin-top: 10px;">
+            <label>
+                <span>🌞 Hora del Día (Posición Solar):</span>
+                <span id="lbl-hora" style="color:#f59e0b; font-weight: 700;">12:00 PM</span>
+            </label>
+            <input type="range" id="slider-hora" min="6" max="18" step="0.05" value="12">
+            <div class="play-row">
+                <button class="btn-play" id="btn-play-day">
+                    <span id="play-icon">▶</span> <span id="play-text">Reproducir Ciclo del Día</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Despiece CAD -->
+        <div class="control-group">
+            <label>
+                <span>🧩 Despiece Técnico CAD:</span>
+                <span id="lbl-exp" style="color: #38bdf8;">0%</span>
+            </label>
+            <input type="range" id="slider-exp" min="0" max="1" step="0.01" value="0">
+        </div>
+
+        <!-- Control de Flujo Hidráulico -->
+        <div class="control-group">
+            <label>
+                <span>🌊 Modo de Flujo del Agua:</span>
+                <span id="lbl-estado-flujo" style="color: #38bdf8; font-weight: 700;">Físico Real</span>
+            </label>
+            <select id="select-modo-flujo">
+                <option value="fisico">⚖️ Físico Real (Velocidad según Calor Solar)</option>
+                <option value="demo">🎬 Demostración Continua (Velocidad Fija)</option>
+            </select>
+        </div>
+
+        <!-- Opciones de Visualización Didáctica -->
+        <div class="toggle-box">
+            <label class="toggle-item">
+                <span>🏷️ Etiquetas Explicativas 3D</span>
+                <input type="checkbox" id="chk-etiquetas" checked>
+            </label>
+            <label class="toggle-item">
+                <span>✨ Haz de Luz Solar Concentrado</span>
+                <input type="checkbox" id="chk-haz" checked>
+            </label>
+            <label class="toggle-item">
+                <span>🌊 Flujo Activo en los 8 Tubos</span>
+                <input type="checkbox" id="chk-flujo" checked>
+            </label>
+        </div>
+
+        <!-- Botones para Abrir Modales -->
+        <div class="btn-group">
+            <button class="btn-modal" onclick="openModal('modal-grafico')">📈 Gráfica del Día</button>
+            <button class="btn-modal btn-sec" onclick="openModal('modal-diagrama')">📋 Especificaciones</button>
+        </div>
+    </div>
+
+    <!-- HINT NAVEGACIÓN -->
+    <div id="hint-box">
+        <div>🖱️ <span>Arrastrar:</span> Rotar 3D</div>
+        <div>🔍 <span>Rueda:</span> Acercar / Alejar</div>
+        <div>👆 <span>Clic Derecho:</span> Desplazar</div>
+    </div>
+
+    <!-- MODAL 1: GRÁFICA TÉRMICA -->
+    <div id="modal-grafico" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('modal-grafico')">&times;</span>
+            <h2 style="color: #f59e0b; font-size: 1.25rem;">📈 Comportamiento Térmico Durante el Día</h2>
+            <p style="font-size: 0.82rem; color: #94a3b8; margin-top: 4px;">
+                Evolución de la temperatura del agua dentro del termotanque y de la placa colectora bajo las condiciones solares de la ciudad seleccionada.
+            </p>
+            <div style="margin-top: 14px;">
+                <canvas id="chartCanvas" style="width: 100%; height: 280px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: ESPECIFICACIONES TÉCNICAS EN LENGUAJE CLARO -->
+    <div id="modal-diagrama" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('modal-diagrama')">&times;</span>
+            <h2 style="color: #38bdf8; font-size: 1.25rem;">📋 Especificaciones Técnicas del Prototipo</h2>
+            <p style="font-size: 0.82rem; color: #94a3b8; margin-top: 4px;">
+                Guía en lenguaje claro y accesible sobre cómo está construido cada componente y por qué funciona de manera eficiente.
+            </p>
+
+            <div class="spec-grid">
+                <!-- Tarjeta 1: Termotanque -->
+                <div class="spec-card">
+                    <div class="spec-icon">🛢️</div>
+                    <div class="spec-body">
+                        <h3>Tanque de Almacenamiento (Termotanque)</h3>
+                        <p>
+                            Depósito cilíndrico vertical con capacidad para <b>200 Litros de agua</b>, suficiente para el consumo diario de una familia promedio de 4 a 5 integrantes.
+                        </p>
+                        <div class="spec-badge">Capacidad: 200 Litros · Acero Inoxidable</div>
+                    </div>
+                </div>
+
+                <!-- Tarjeta 2: Aislamiento Térmico -->
+                <div class="spec-card">
+                    <div class="spec-icon">🛡️</div>
+                    <div class="spec-body">
+                        <h3>Aislamiento Térmico (Espuma de Poliuretano PUR)</h3>
+                        <p>
+                            Una gruesa capa protectora de <b>5 centímetros (50 mm)</b> de espuma de poliuretano inyectada (se observa en color amarillo en el corte 3D). Funciona como un termo gigante para retener el calor durante la noche o en madrugadas frías.
+                        </p>
+                        <div class="spec-badge">Espesor: 50 mm · Pérdida térmica menor a 3 °C por noche</div>
+                    </div>
+                </div>
+
+                <!-- Tarjeta 3: Colector Solar -->
+                <div class="spec-card">
+                    <div class="spec-icon">☀️</div>
+                    <div class="spec-body">
+                        <h3>Colector Solar (Placa Plana con Cubierta de Vidrio)</h3>
+                        <p>
+                            Panel captador de <b>2.0 metros cuadrados</b> (2.0 m de largo por 1.0 m de ancho). La superficie metálica está tratada con pintura negro mate absorbente que capta hasta el <b>95% de la radiación solar</b>, protegida por un vidrio templado que genera efecto invernadero.
+                        </p>
+                        <div class="spec-badge">Área: 2.0 m² · Absorción: 95% · Vidrio templado 4 mm</div>
+                    </div>
+                </div>
+
+                <!-- Tarjeta 4: Termosifón -->
+                <div class="spec-card">
+                    <div class="spec-icon">🔄</div>
+                    <div class="spec-body">
+                        <h3>Efecto Termosifón (Circulación 100% Natural Sin Bombas)</h3>
+                        <p>
+                            El circuito no gasta electricidad. Cuando el agua dentro del panel solar se calienta, se vuelve más ligera y sube de forma natural hacia el termotanque. Al mismo tiempo, el agua fría del fondo del tanque, al ser más pesada, desciende hacia el colector.
+                        </p>
+                        <div class="spec-badge">Cero consumo eléctrico · Flujo pasivo continuo</div>
+                    </div>
+                </div>
+
+                <!-- Tarjeta 5: Circuito Hidráulico -->
+                <div class="spec-card">
+                    <div class="spec-icon">🚰</div>
+                    <div class="spec-body">
+                        <h3>Circuito Cerrado y Siempre Lleno de Agua</h3>
+                        <p>
+                            El sistema trabaja siempre presurizado y lleno con el agua de la red pública. Nunca se queda vacío: conforme una persona abre la ducha y usa agua caliente arriba, entra automáticamente agua fría por la base del tanque.
+                        </p>
+                        <div class="spec-badge">Conexión directa a red doméstica</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT PRINCIPAL THREE.JS -->
+    <script>
+        // --- 1. DATOS CLIMÁTICOS DE CIUDADES DEL PERÚ ---
+        const datosCiudades = {
+            "Cusco": {
+                estacion: "Estación Granja Kayra (Cusco)",
+                altitud: "3,399 msnm",
+                cielo: "Despejado / Sierra Sur",
+                tempMin: 4.2,
+                tempMax: 21.8,
+                tempAmb: 18,
+                radMax: 980,
+                iuv: 14,
+                vientoVel: 12,
+                vientoTexto: "12 km/h (Brisa andina)",
+                humedad: "38%",
+                tMin: 3.1,
+                desc: "Gran radiación por altitud andina. Noches y madrugadas frías requieren excelente aislamiento térmico (PUR 50mm) para conservar el calor acumulado."
+            },
+            "Arequipa": {
+                estacion: "Estación La Pampilla (Arequipa)",
+                altitud: "2,325 msnm",
+                cielo: "Despejado permanente",
+                tempMin: 9.8,
+                tempMax: 24.5,
+                tempAmb: 21,
+                radMax: 1020,
+                iuv: 15,
+                vientoVel: 15,
+                vientoTexto: "15 km/h (Suroeste)",
+                humedad: "32%",
+                tMin: 2.8,
+                desc: "Más de 300 días de sol al año y atmósfera límpida. Máximo rendimiento de captación solar en colectores de placa plana en todo el Perú."
+            },
+            "Puno": {
+                estacion: "Estación Bellavista (Puno)",
+                altitud: "3,812 msnm",
+                cielo: "Despejado / Altiplano",
+                tempMin: 1.2,
+                tempMax: 16.5,
+                tempAmb: 15,
+                radMax: 990,
+                iuv: 14,
+                vientoVel: 18,
+                vientoTexto: "18 km/h (Viento altiplánico)",
+                humedad: "41%",
+                tMin: 3.5,
+                desc: "Radiación solar extrema pero con temperatura ambiente muy fría (heladas). El termotanque y las cañerías requieren aislamiento reforzado antiheladas."
+            },
+            "Ica": {
+                estacion: "Estación San José (Ica)",
+                altitud: "406 msnm",
+                cielo: "Soleado / Desértico",
+                tempMin: 14.5,
+                tempMax: 29.2,
+                tempAmb: 26,
+                radMax: 940,
+                iuv: 12,
+                vientoVel: 22,
+                vientoTexto: "22 km/h (Vientos Paracas)",
+                humedad: "54%",
+                tMin: 2.4,
+                desc: "Clima cálido con fuerte radiación todo el año. Alta eficiencia térmica del agua debido a temperaturas nocturnas templadas y escasa nubosidad."
+            },
+            "Lima": {
+                estacion: "Estación Alexander Von Humboldt (Lima)",
+                altitud: "240 msnm",
+                cielo: "Nublado parcial / Costero",
+                tempMin: 16.2,
+                tempMax: 22.8,
+                tempAmb: 22,
+                radMax: 750,
+                iuv: 8,
+                vientoVel: 14,
+                vientoTexto: "14 km/h (Brisa marina)",
+                humedad: "84%",
+                tMin: 4.0,
+                desc: "Capa de nubes estratiformes y alta humedad que aumentan la radiación difusa. El colector absorbe eficientemente calor en horas centrales."
+            },
+            "Tarapoto": {
+                estacion: "Estación San Martín (Tarapoto)",
+                altitud: "350 msnm",
+                cielo: "Parcialmente nublado",
+                tempMin: 22.4,
+                tempMax: 33.1,
+                tempAmb: 29,
+                radMax: 860,
+                iuv: 11,
+                vientoVel: 8,
+                vientoTexto: "8 km/h (Calma / Selva Alta)",
+                humedad: "72%",
+                tMin: 2.3,
+                desc: "Ambiente cálido de selva alta. El agua de red ingresa ya templada (~24 °C), por lo que el tiempo para alcanzar 45 °C es sumamente rápido."
+            },
+            "Iquitos": {
+                estacion: "Estación Moronacocha (Iquitos)",
+                altitud: "106 msnm",
+                cielo: "Nubosidad variable tropical",
+                tempMin: 23.5,
+                tempMax: 32.6,
+                tempAmb: 31,
+                radMax: 820,
+                iuv: 10,
+                vientoVel: 6,
+                vientoTexto: "6 km/h (Brisa fluvial)",
+                humedad: "88%",
+                tMin: 2.2,
+                desc: "Clima ecuatorial cálido y muy húmedo. Mínimas pérdidas térmicas por convección ambiental hacia el exterior del termotanque."
+            }
+        };
+
+        let ciudadActual = "Cusco";
+        let isPlaying = false;
+        let playSpeed = 0.04;
+
+        // --- 2. CONFIGURACIÓN DE LA ESCENA THREE.JS ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x070a13);
+        scene.fog = new THREE.FogExp2(0x070a13, 0.04);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(3.8, 2.5, 4.4);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(0.1, 1.1, 0);
+        controls.maxPolarAngle = Math.PI / 2 - 0.02; // No descender por debajo del suelo
+
+        // Iluminación
+        const ambientLight = new THREE.AmbientLight(0xdbeafe, 0.5);
+        scene.add(ambientLight);
+
+        const sunLight = new THREE.DirectionalLight(0xfff7ed, 1.7);
+        sunLight.castShadow = true;
+        sunLight.shadow.mapSize.width = 1024;
+        sunLight.shadow.mapSize.height = 1024;
+        sunLight.shadow.camera.near = 0.5;
+        sunLight.shadow.camera.far = 25;
+        sunLight.shadow.bias = -0.001;
+        scene.add(sunLight);
+
+        // Esfera y Halo del Sol
+        const sunGroup = new THREE.Group();
+        const sunMesh = new THREE.Mesh(
+            new THREE.SphereGeometry(0.22, 32, 32),
+            new THREE.MeshBasicMaterial({ color: 0xffb703 })
+        );
+        sunGroup.add(sunMesh);
+
+        // Corona solar translúcida
+        const sunCorona = new THREE.Mesh(
+            new THREE.SphereGeometry(0.35, 24, 24),
+            new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.35 })
+        );
+        sunGroup.add(sunCorona);
+        scene.add(sunGroup);
+
+        // Piso con cuadrícula estilizada
+        const gridHelper = new THREE.GridHelper(16, 32, 0x334155, 0x1e293b);
+        gridHelper.position.y = -0.01;
+        scene.add(gridHelper);
+
+        const floorMesh = new THREE.Mesh(
+            new THREE.PlaneGeometry(30, 30),
+            new THREE.MeshStandardMaterial({ color: 0x090d16, roughness: 0.9, metalness: 0.1 })
+        );
+        floorMesh.rotation.x = -Math.PI / 2;
+        floorMesh.position.y = -0.02;
+        floorMesh.receiveShadow = true;
+        scene.add(floorMesh);
+
+        // Grupo Principal
+        const mainGroup = new THREE.Group();
+        scene.add(mainGroup);
+
+        // --- 3. MATERIALES ---
+        const matVidrio = new THREE.MeshPhysicalMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.28,
+            roughness: 0.05,
+            transmission: 0.7,
+            thickness: 0.4
+        });
+        const matCaja = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5, metalness: 0.2 });
+        const matPlaca = new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.3, metalness: 0.1 });
+        const matCobre = new THREE.MeshStandardMaterial({ color: 0xb45309, metalness: 0.85, roughness: 0.25 });
+        const matSoporte = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.6, roughness: 0.4 });
+        const matPoliuretano = new THREE.MeshStandardMaterial({ color: 0xeab308, roughness: 0.8 }); // Aislante amarillo
+        const matTanqueMetal = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.7, roughness: 0.3 });
+        const matBaja = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.3 }); // Tubería fría (azul fijo)
+        const matRetorno = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.3 }); // Tubería retorno (dinámica según temperatura)
+
+        // Función Maestra de Colorimetría Térmica (15°C Azul frío -> 68°C Rojo caliente)
+        function obtenerColorTermico(temp) {
+            const minT = 16.0;
+            const maxT = 68.0;
+            const norm = Math.max(0, Math.min(1, (temp - minT) / (maxT - minT)));
+            // HSL: 0.58 (210° Azul) -> 0.38 (Cian) -> 0.14 (Amarillo) -> 0.08 (Naranja) -> 0.0 (Rojo)
+            const hue = (1.0 - norm) * 0.58;
+            const col = new THREE.Color();
+            col.setHSL(hue, 0.95, 0.48 + norm * 0.06);
+            return col;
+        }
+
+        // Textura Dinámica de Estratificación Térmica del Tanque (Actualizada continuamente)
+        const canvasEstrat = document.createElement('canvas');
+        canvasEstrat.width = 64;
+        canvasEstrat.height = 256;
+        const ctxEstrat = canvasEstrat.getContext('2d');
+        const texAgua = new THREE.CanvasTexture(canvasEstrat);
+
+        function actualizarTexturaEstratificacion(tempBase, tempTop) {
+            ctxEstrat.clearRect(0, 0, 64, 256);
+            const grad = ctxEstrat.createLinearGradient(0, 256, 0, 0); // de abajo hacia arriba
+            const colBase = '#' + obtenerColorTermico(tempBase).getHexString();
+            const colTop = '#' + obtenerColorTermico(tempTop).getHexString();
+            const colMid = '#' + obtenerColorTermico((tempBase + tempTop) * 0.5).getHexString();
+
+            grad.addColorStop(0.0, colBase);
+            grad.addColorStop(0.35, colBase);
+            grad.addColorStop(0.68, colMid);
+            grad.addColorStop(1.0, colTop);
+            ctxEstrat.fillStyle = grad;
+            ctxEstrat.fillRect(0, 0, 64, 256);
+            texAgua.needsUpdate = true;
+        }
+
+        actualizarTexturaEstratificacion(18, 18);
+
+        const matAguaEstratificada = new THREE.MeshStandardMaterial({
+            map: texAgua,
+            roughness: 0.1,
+            metalness: 0.05,
+            transparent: true,
+            opacity: 0.92
+        });
+
+        // --- 4. GEOMETRÍA 3D DEL COLECTOR SOLAR ---
+        // El colector se ubica a la izquierda (X ≈ -0.7) inclinado a ~30 grados
+        const colectorGroup = new THREE.Group();
+        const anguloInclinacion = Math.PI / 6; // 30 grados
+        colectorGroup.position.set(-0.75, 0.65, 0.2);
+        colectorGroup.rotation.x = anguloInclinacion;
+        mainGroup.add(colectorGroup);
+
+        // Caja / Carcasa del colector
+        const cajaMesh = new THREE.Mesh(new THREE.BoxGeometry(1.06, 0.10, 1.86), matCaja);
+        cajaMesh.castShadow = true;
+        cajaMesh.receiveShadow = true;
+        colectorGroup.add(cajaMesh);
+
+        // Placa absorbedora
+        const placaMesh = new THREE.Mesh(new THREE.BoxGeometry(0.98, 0.015, 1.78), matPlaca);
+        placaMesh.position.y = 0.02;
+        colectorGroup.add(placaMesh);
+
+        // Parrilla de Tubos del Colector (Cabezal inferior, cabezal superior y 8 tubos paralelos ascendentes)
+        const tubosGroup = new THREE.Group();
+        const numTubos = 8;
+        const largoTubo = 1.62;
+        const anchoParrilla = 0.88;
+        const pasoX = anchoParrilla / (numTubos - 1);
+
+        // Tubos longitudinales ascendentes (acostados sobre la placa del colector)
+        for (let i = 0; i < numTubos; i++) {
+            const xPos = -anchoParrilla / 2 + i * pasoX;
+            const tubo = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.011, largoTubo, 16), matCobre);
+            tubo.rotation.x = Math.PI / 2; // Acostado a lo largo del plano inclinado del colector
+            tubo.position.set(xPos, 0.035, 0);
+            tubosGroup.add(tubo);
+        }
+
+        // Cabezal inferior (recolector de agua fría)
+        const cabezalInf = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, anchoParrilla + 0.08, 16), matCobre);
+        cabezalInf.rotation.z = Math.PI / 2;
+        cabezalInf.position.set(0, 0.035, largoTubo / 2);
+        tubosGroup.add(cabezalInf);
+
+        // Cabezal superior (salida de agua caliente)
+        const cabezalSup = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, anchoParrilla + 0.08, 16), matCobre);
+        cabezalSup.rotation.z = Math.PI / 2;
+        cabezalSup.position.set(0, 0.035, -largoTubo / 2);
+        tubosGroup.add(cabezalSup);
+
+        colectorGroup.add(tubosGroup);
+
+        // Vidrio protector frontal
+        const vidrioMesh = new THREE.Mesh(new THREE.BoxGeometry(1.02, 0.008, 1.82), matVidrio);
+        vidrioMesh.position.y = 0.065;
+        colectorGroup.add(vidrioMesh);
+
+        // --- Estructura Metálica de Soporte (Patas y Bastidor) ---
+        const estructuraGroup = new THREE.Group();
+        mainGroup.add(estructuraGroup);
+
+        function crearPerfilSoporte(x1, y1, z1, x2, y2, z2) {
+            const p1 = new THREE.Vector3(x1, y1, z1);
+            const p2 = new THREE.Vector3(x2, y2, z2);
+            const dir = new THREE.Vector3().subVectors(p2, p1);
+            const len = dir.length();
+            const geom = new THREE.CylinderGeometry(0.018, 0.018, len, 8);
+            const mesh = new THREE.Mesh(geom, matSoporte);
+            mesh.castShadow = true;
+
+            mesh.position.copy(p1).add(dir.multiplyScalar(0.5));
+            mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+            estructuraGroup.add(mesh);
+            return mesh;
+        }
+
+        // Patas cortas delanteras del colector (en el suelo)
+        crearPerfilSoporte(-1.24, 0, 0.95, -1.24, 0.28, 0.95);
+        crearPerfilSoporte(-0.26, 0, 0.95, -0.26, 0.28, 0.95);
+        // Patas altas traseras del colector
+        crearPerfilSoporte(-1.24, 0, -0.65, -1.24, 1.18, -0.65);
+        crearPerfilSoporte(-0.26, 0, -0.65, -0.26, 1.18, -0.65);
+        // Travesaños diagonales de refuerzo
+        crearPerfilSoporte(-1.24, 0, 0.95, -1.24, 1.18, -0.65);
+        crearPerfilSoporte(-0.26, 0, 0.95, -0.26, 1.18, -0.65);
+        crearPerfilSoporte(-1.24, 0.3, -0.65, -0.26, 0.3, -0.65);
+
+        // --- 5. GEOMETRÍA 3D DEL TERMOTANQUE (VERTICAL CON CORTE SECCIONAL) ---
+        // Ubicado verticalmente a la derecha (X ≈ 0.85)
+        const tanquePos = new THREE.Vector3(0.85, 1.35, 0.05);
+        const tanqueGroup = new THREE.Group();
+        tanqueGroup.position.copy(tanquePos);
+        mainGroup.add(tanqueGroup);
+
+        const alturaTanque = 1.25;
+        const radioExterior = 0.36;
+        const radioAislante = 0.33;
+        const radioInterior = 0.28;
+        const anguloCorte = Math.PI * 1.35; // Corte visible frontal (~240° cilíndrico)
+        const inicioAngulo = Math.PI * 0.45;
+
+        // Capa 1: Carcasa Metálica Exterior con Corte
+        const geomTanqueExt = new THREE.CylinderGeometry(
+            radioExterior, radioExterior, alturaTanque, 32, 1, false, inicioAngulo, anguloCorte
+        );
+        const tanqueExtMesh = new THREE.Mesh(geomTanqueExt, matTanqueMetal);
+        tanqueExtMesh.castShadow = true;
+        tanqueGroup.add(tanqueExtMesh);
+
+        // Tapas superior e inferior metálicas
+        const tapaSup = new THREE.Mesh(new THREE.CylinderGeometry(radioExterior + 0.01, radioExterior + 0.01, 0.04, 32), matTanqueMetal);
+        tapaSup.position.y = alturaTanque / 2;
+        tanqueGroup.add(tapaSup);
+
+        const tapaInf = new THREE.Mesh(new THREE.CylinderGeometry(radioExterior + 0.01, radioExterior + 0.01, 0.04, 32), matTanqueMetal);
+        tapaInf.position.y = -alturaTanque / 2;
+        tanqueGroup.add(tapaInf);
+
+        // Capa 2: Aislamiento Térmico de Poliuretano PUR (Amarillo)
+        const geomAislante = new THREE.CylinderGeometry(
+            radioAislante, radioAislante, alturaTanque - 0.04, 32, 1, false, inicioAngulo, anguloCorte
+        );
+        const aislanteMesh = new THREE.Mesh(geomAislante, matPoliuretano);
+        tanqueGroup.add(aislanteMesh);
+
+        // Capa 3: Núcleo de Agua con Estratificación Térmica (Degradado Azul -> Rojo)
+        const geomAgua = new THREE.CylinderGeometry(
+            radioInterior, radioInterior, alturaTanque - 0.08, 32, 1, false, 0, Math.PI * 2
+        );
+        const aguaMesh = new THREE.Mesh(geomAgua, matAguaEstratificada);
+        tanqueGroup.add(aguaMesh);
+
+        // Patas de soporte del termotanque (lo elevan sobre el suelo)
+        const patasTanqueGroup = new THREE.Group();
+        mainGroup.add(patasTanqueGroup);
+        const hPatas = tanquePos.y - alturaTanque / 2;
+        crearPerfilSoporte(tanquePos.x - 0.22, 0, tanquePos.z - 0.22, tanquePos.x - 0.22, hPatas, tanquePos.z - 0.22);
+        crearPerfilSoporte(tanquePos.x + 0.22, 0, tanquePos.z - 0.22, tanquePos.x + 0.22, hPatas, tanquePos.z - 0.22);
+        crearPerfilSoporte(tanquePos.x - 0.22, 0, tanquePos.z + 0.22, tanquePos.x - 0.22, hPatas, tanquePos.z + 0.22);
+        crearPerfilSoporte(tanquePos.x + 0.22, 0, tanquePos.z + 0.22, tanquePos.x + 0.22, hPatas, tanquePos.z + 0.22);
+
+        // --- 6. TUBERÍAS DEL CIRCUITO CERRADO ---
+        const tuberiasGroup = new THREE.Group();
+        mainGroup.add(tuberiasGroup);
+
+        function crearTramoTuberia(p1, p2, mat, radio = 0.018) {
+            const v1 = (p1 instanceof THREE.Vector3) ? p1 : new THREE.Vector3(...p1);
+            const v2 = (p2 instanceof THREE.Vector3) ? p2 : new THREE.Vector3(...p2);
+            const dir = new THREE.Vector3().subVectors(v2, v1);
+            const len = dir.length();
+            const geom = new THREE.CylinderGeometry(radio, radio, len, 16);
+            const mesh = new THREE.Mesh(geom, mat);
+            mesh.position.copy(v1).add(dir.clone().multiplyScalar(0.5));
+            mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+            mesh.castShadow = true;
+            tuberiasGroup.add(mesh);
+            return mesh;
+        }
+
+        // Puntos Clave para Empalme Milimétrico Perfecto (0 mm de holgura):
+        // La base del termotanque está en X=0.85, Y=0.72, Z=0.05
+        const pTanqueFrio = new THREE.Vector3(0.85, 0.72, 0.05);
+        
+        // Empalme exacto con el cabezal inferior del colector solar:
+        // El extremo derecho del cabezal inferior se ubica exactamente en (-0.270, 0.275, 0.919)
+        const pEntradaColector = new THREE.Vector3(-0.270, 0.275, 0.919);
+        const pCodoBajo1 = new THREE.Vector3(0.85, 0.275, 0.05);
+        const pCodoBajo2 = new THREE.Vector3(0.85, 0.275, 0.919);
+
+        // Tubería Azul (1. Entrada de Agua Fría - baja por gravedad y empalma directamente)
+        crearTramoTuberia(pTanqueFrio, pCodoBajo1, matBaja);
+        crearTramoTuberia(pCodoBajo1, pCodoBajo2, matBaja);
+        crearTramoTuberia(pCodoBajo2, pEntradaColector, matBaja);
+
+        // Empalme exacto con el cabezal superior del colector solar:
+        // El extremo derecho del cabezal superior se ubica exactamente en (-0.270, 1.085, -0.484)
+        const pSalidaColector = new THREE.Vector3(-0.270, 1.085, -0.484);
+        const pCodoAlto1 = new THREE.Vector3(0.48, 1.085, -0.484);
+        const pCodoAlto2 = new THREE.Vector3(0.48, 1.085, 0.05);
+        const pCodoAlto3 = new THREE.Vector3(0.48, 1.72, 0.05);
+        const pEntradaTanqueCaliente = new THREE.Vector3(0.55, 1.72, 0.05);
+
+        // Tubería Roja (3. Retorno de Agua Caliente - sube naturalmente y empalma directamente)
+        crearTramoTuberia(pSalidaColector, pCodoAlto1, matRetorno);
+        crearTramoTuberia(pCodoAlto1, pCodoAlto2, matRetorno);
+        crearTramoTuberia(pCodoAlto2, pCodoAlto3, matRetorno);
+        crearTramoTuberia(pCodoAlto3, pEntradaTanqueCaliente, matRetorno);
+
+        // Bridas / Niples de empalme reforzados en los puntos de acople del colector
+        const geomBrida = new THREE.CylinderGeometry(0.024, 0.024, 0.05, 16);
+        const bridaFria = new THREE.Mesh(geomBrida, matCobre);
+        bridaFria.rotation.z = Math.PI / 2;
+        bridaFria.position.copy(pEntradaColector);
+        mainGroup.add(bridaFria);
+
+        const bridaCaliente = new THREE.Mesh(geomBrida, matCobre);
+        bridaCaliente.rotation.z = Math.PI / 2;
+        bridaCaliente.position.copy(pSalidaColector);
+        mainGroup.add(bridaCaliente);
+
+        // Conexiones de Red Adicionales (como en la infografía):
+        // Entrada de agua fría de red (tubito celeste lateral abajo a la derecha)
+        crearTramoTuberia([1.18, 0.85, 0.2], [1.38, 0.80, 0.28], matBaja, 0.014);
+        // Salida de agua caliente para consumo (tubito rojo arriba saliendo en cuello curvo)
+        crearTramoTuberia([0.85, 1.95, 0.05], [0.85, 2.15, 0.05], matRetorno, 0.016);
+        crearTramoTuberia([0.85, 2.15, 0.05], [1.12, 2.22, 0.05], matRetorno, 0.016);
+
+        // --- 7. HAZ DE LUZ SOLAR VOLUMÉTRICO Y RAYOS ---
+        const hazGroup = new THREE.Group();
+        scene.add(hazGroup);
+
+        // Cono de radiación solar translúcido
+        const geomHaz = new THREE.CylinderGeometry(0.2, 1.25, 5.0, 32, 1, true);
+        const matHaz = new THREE.MeshBasicMaterial({
+            color: 0xfef08a,
+            transparent: true,
+            opacity: 0.18,
+            side: THREE.DoubleSide,
+            depthWrite: false
+        });
+        const hazMesh = new THREE.Mesh(geomHaz, matHaz);
+        hazGroup.add(hazMesh);
+
+        // Rayos solares dorados tipo partículas que viajan a la placa
+        const rayosCount = 45;
+        const geomRayos = new THREE.BufferGeometry();
+        const posRayos = new Float32Array(rayosCount * 3);
+        for (let i = 0; i < rayosCount * 3; i += 3) {
+            posRayos[i] = (Math.random() - 0.5) * 0.9;
+            posRayos[i+1] = Math.random() * 4.5;
+            posRayos[i+2] = (Math.random() - 0.5) * 1.5;
+        }
+        geomRayos.setAttribute('position', new THREE.BufferAttribute(posRayos, 3));
+        const matParticulasSol = new THREE.PointsMaterial({
+            color: 0xfbbf24,
+            size: 0.035,
+            transparent: true,
+            opacity: 0.75
+        });
+        const particulasSolMesh = new THREE.Points(geomRayos, matParticulasSol);
+        hazGroup.add(particulasSolMesh);
+
+        function actualizarHazSolar(posSol, targetPos, intensidad) {
+            const dir = new THREE.Vector3().subVectors(targetPos, posSol);
+            const dist = dir.length();
+            
+            hazMesh.scale.set(1, dist / 5.0, 1);
+            hazGroup.position.copy(posSol).add(dir.clone().multiplyScalar(0.5));
+            hazGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), dir.clone().normalize());
+
+            matHaz.opacity = 0.05 + intensidad * 0.22;
+            matParticulasSol.opacity = 0.1 + intensidad * 0.7;
+        }
+
+        // --- 8. ANIMACIÓN DEL TERMOSIFÓN: FLUJO PARALELO EN LOS 8 TUBOS Y FÍSICA TÉRMICA DINÁMICA ---
+        const grupoFlujo = new THREE.Group();
+        mainGroup.add(grupoFlujo);
+
+        // Curva 1: Bajada de Agua Fría (Termotanque -> Tubería Azul -> Cabezal Inferior)
+        const curvaBajada = new THREE.CatmullRomCurve3([
+            pTanqueFrio.clone(),
+            pCodoBajo1.clone(),
+            pCodoBajo2.clone(),
+            pEntradaColector.clone()
+        ]);
+
+        // Curva 2: Tubería Roja de Retorno Caliente (Cabezal Superior -> Termotanque)
+        const curvaRetorno = new THREE.CatmullRomCurve3([
+            pSalidaColector.clone(),
+            pCodoAlto1.clone(),
+            pCodoAlto2.clone(),
+            pCodoAlto3.clone(),
+            pEntradaTanqueCaliente.clone()
+        ]);
+
+        // Curva 3: Circulación Interna en el Termotanque
+        const curvaTanque = new THREE.CatmullRomCurve3([
+            pEntradaTanqueCaliente.clone(),
+            new THREE.Vector3(0.85, 1.70, 0.05),
+            new THREE.Vector3(0.85, 1.25, 0.05),
+            new THREE.Vector3(0.85, 0.85, 0.05),
+            pTanqueFrio.clone()
+        ]);
+
+        // 1. Partículas en la Tubería Azul de Bajada
+        const numPartBajada = 10;
+        const particulasBajada = [];
+        for (let i = 0; i < numPartBajada; i++) {
+            const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.015, 12, 12), new THREE.MeshBasicMaterial({ color: 0x0284c7 }));
+            grupoFlujo.add(mesh);
+            particulasBajada.push({ mesh, t: i / numPartBajada });
+        }
+
+        // 2. Partículas Ascendiendo Simultáneamente en los 8 Tubos del Colector Solar
+        // Cada tubo k (de 0 a 7) tiene sus propias partículas que suben en paralelo
+        const particulasTubos = [];
+        const particulasPorTubo = 4; // 8 tubos x 4 partículas = 32 partículas en la placa
+
+        for (let k = 0; k < numTubos; k++) {
+            const xLocal = -anchoParrilla / 2 + k * pasoX;
+            const xWorld = -0.75 + xLocal;
+            const yBot = 0.275;
+            const zBot = 0.919;
+            const yTop = 1.085;
+            const zTop = -0.484;
+
+            for (let j = 0; j < particulasPorTubo; j++) {
+                const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.013, 12, 12), new THREE.MeshBasicMaterial({ color: 0x0284c7 }));
+                grupoFlujo.add(mesh);
+                particulasTubos.push({
+                    mesh,
+                    k,
+                    xWorld,
+                    yBot, zBot,
+                    yTop, zTop,
+                    s: (j / particulasPorTubo + (k * 0.12)) % 1.0 // desfase natural entre tubos
+                });
+            }
+        }
+
+        // 3. Partículas en la Tubería Roja de Retorno Caliente
+        const numPartRetorno = 12;
+        const particulasRetorno = [];
+        for (let i = 0; i < numPartRetorno; i++) {
+            const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.015, 12, 12), new THREE.MeshBasicMaterial({ color: 0xef4444 }));
+            grupoFlujo.add(mesh);
+            particulasRetorno.push({ mesh, t: i / numPartRetorno });
+        }
+
+        // 4. Partículas Dentro del Termotanque
+        const numPartTanque = 8;
+        const particulasTanque = [];
+        for (let i = 0; i < numPartTanque; i++) {
+            const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.015, 12, 12), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
+            grupoFlujo.add(mesh);
+            particulasTanque.push({ mesh, t: i / numPartTanque });
+        }
+
+        // Variables Globales de Temperatura Instantánea
+        let tempAmbGlobal = 18;
+        let tempPlacaGlobal = 62.5;
+        let tempAguaGlobal = 48.0;
+
+        function actualizarFlujoAgua() {
+            const selectModo = document.getElementById('select-modo-flujo');
+            const modo = selectModo ? selectModo.value : 'fisico';
+            
+            // Si el modo es 'fisico', la velocidad del termosifón depende del calor solar generado
+            let step = 0.0022;
+            if (modo === 'fisico') {
+                const deltaT = Math.max(0, tempPlacaGlobal - tempAmbGlobal);
+                const factorTermico = deltaT / 48.5; // 0 de madrugada / 6 AM, ~1 a mediodía
+                // A las 6 AM el agua está casi inmóvil (0.0003); al mediodía circula con fuerza (0.0035)
+                step = 0.0003 + factorTermico * 0.0032;
+            }
+
+            // 1. Mover bajada fría (Tubería azul)
+            particulasBajada.forEach(p => {
+                p.t += step;
+                if (p.t > 1) p.t -= 1;
+                p.mesh.position.copy(curvaBajada.getPointAt(p.t));
+                // Agua fría siempre a la temperatura ambiental de la red
+                p.mesh.material.color.copy(obtenerColorTermico(tempAmbGlobal));
+            });
+
+            // 2. Mover las partículas en los 8 TUBOS DEL COLECTOR SIMULTÁNEAMENTE
+            particulasTubos.forEach(p => {
+                p.s += step;
+                if (p.s > 1) p.s -= 1;
+                const y = p.yBot + p.s * (p.yTop - p.yBot);
+                const z = p.zBot + p.s * (p.zTop - p.zBot);
+                p.mesh.position.set(p.xWorld, y, z);
+
+                // FÍSICA TÉRMICA:
+                // A las 6 AM (tempPlacaGlobal == tempAmbGlobal), la temperatura en todo el tubo es fría -> 100% AZUL
+                // Al mediodía, pasa progresivamente de azul en la base a amarillo y ROJO en la parte superior
+                const tempLocal = tempAmbGlobal + p.s * (tempPlacaGlobal - tempAmbGlobal);
+                p.mesh.material.color.copy(obtenerColorTermico(tempLocal));
+            });
+
+            // 3. Mover retorno caliente (Tubería roja)
+            particulasRetorno.forEach(p => {
+                p.t += step;
+                if (p.t > 1) p.t -= 1;
+                p.mesh.position.copy(curvaRetorno.getPointAt(p.t));
+                // Temperatura real del agua que sale caliente del colector
+                p.mesh.material.color.copy(obtenerColorTermico(tempPlacaGlobal));
+            });
+
+            // 4. Mover estratificación dentro del termotanque
+            particulasTanque.forEach(p => {
+                p.t += step * 0.55; // Descenso suave en el volumen del tanque
+                if (p.t > 1) p.t -= 1;
+                p.mesh.position.copy(curvaTanque.getPointAt(p.t));
+                const tempLocal = tempAguaGlobal - p.t * (tempAguaGlobal - tempAmbGlobal);
+                p.mesh.material.color.copy(obtenerColorTermico(tempLocal));
+            });
+        }
+
+        // --- 9. ETIQUETAS DIDÁCTICAS 3D (Adaptación Dinámica y Tipografía Formal Unificada) ---
+        const etiquetasGroup = new THREE.Group();
+        mainGroup.add(etiquetasGroup);
+
+        function crearEtiqueta3D(texto, colorFondo = '#0f172a', colorBorde = '#38bdf8', alturaFisica = 0.16) {
+            // Medición precisa del ancho real del texto para que el rectángulo se adapte exactamente sin cortes
+            const fontStyle = 'bold 30px "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif';
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.font = fontStyle;
+            const textMetrics = tempCtx.measureText(texto);
+            const textWidth = Math.ceil(textMetrics.width);
+
+            const padX = 26;
+            const padY = 14;
+            const canvasW = textWidth + padX * 2;
+            const canvasH = 30 + padY * 2;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = canvasW;
+            canvas.height = canvasH;
+            const ctx = canvas.getContext('2d');
+
+            // Fondo formal tipo píldora con esquinas redondeadas suaves
+            ctx.fillStyle = colorFondo;
+            ctx.strokeStyle = colorBorde;
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.roundRect(2, 2, canvasW - 4, canvasH - 4, 12);
+            ctx.fill();
+            ctx.stroke();
+
+            // Texto perfectamente centrado y nítido
+            ctx.fillStyle = '#ffffff';
+            ctx.font = fontStyle;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(texto, canvasW / 2, canvasH / 2);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.minFilter = THREE.LinearFilter;
+            const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false });
+            const sprite = new THREE.Sprite(spriteMat);
+
+            // Escala física proporcional: todas las etiquetas mantienen la misma altura de letra uniforme
+            const factorEscala = alturaFisica / canvasH;
+            sprite.scale.set(canvasW * factorEscala, alturaFisica, 1);
+
+            etiquetasGroup.add(sprite);
+            return sprite;
+        }
+
+        // Posiciones estratégicas de las etiquetas según la infografía técnica
+        // 1. Título principal del Termotanque (destacado y elevado para no interferir con cañerías)
+        const lblTermotanque = crearEtiqueta3D("TANQUE DE ALMACENAMIENTO (TERMOTANQUE 200L)", "#0f172a", "#38bdf8", 0.19);
+        lblTermotanque.position.set(0.85, 2.70, 0.05);
+
+        // 2. Salida de agua caliente para consumo (a la derecha de la salida superior)
+        const lblSalidaCaliente = crearEtiqueta3D("SALIDA DE AGUA CALIENTE (Para consumo / ducha)", "#7f1d1d", "#f87171", 0.15);
+        lblSalidaCaliente.position.set(1.72, 2.22, 0.05);
+
+        // 3. Entrada de agua fría de la red que abastece el termotanque
+        const lblEntradaRed = crearEtiqueta3D("ENTRADA DE AGUA FRÍA DE LA RED", "#0369a1", "#38bdf8", 0.15);
+        lblEntradaRed.position.set(1.76, 0.82, 0.28);
+
+        // 4. Circuito Termosifónico (Entrada de agua fría que baja por gravedad)
+        const lblEntradaFria = crearEtiqueta3D("1. ENTRADA DE AGUA FRÍA (Baja por gravedad)", "#0369a1", "#38bdf8", 0.15);
+        lblEntradaFria.position.set(0.32, 0.38, 0.92);
+
+        // 5. Colector Solar y Zona de Calentamiento
+        const lblCalentamiento = crearEtiqueta3D("2. CALENTAMIENTO SOLAR (Radiación)", "#b45309", "#fbbf24", 0.15);
+        lblCalentamiento.position.set(-1.48, 0.72, 0.15);
+
+        const lblColector = crearEtiqueta3D("COLECTOR SOLAR DE PLACA PLANA (2.0 m²)", "#1e293b", "#fbbf24", 0.16);
+        lblColector.position.set(-0.75, 1.42, 0.20);
+
+        // 6. Retorno de agua caliente al termotanque
+        const lblRetornoCaliente = crearEtiqueta3D("3. RETORNO DE AGUA CALIENTE (Sube naturalmente)", "#b91c1c", "#f87171", 0.15);
+        lblRetornoCaliente.position.set(0.10, 1.50, -0.48);
+
+        // --- 10. LÓGICA DE SIMULACIÓN Y ACTUALIZACIONES ---
+        const sliderHora = document.getElementById('slider-hora');
+        const sliderExp = document.getElementById('slider-exp');
+        const selectCiudad = document.getElementById('select-ciudad');
+        const btnPlay = document.getElementById('btn-play-day');
+        const chkEtiquetas = document.getElementById('chk-etiquetas');
+        const chkHaz = document.getElementById('chk-haz');
+        const chkFlujo = document.getElementById('chk-flujo');
+
+        function actualizarSimulacion() {
+            ciudadActual = selectCiudad.value;
+            const datos = datosCiudades[ciudadActual];
+
+            const hora = parseFloat(sliderHora.value);
+            const exp = parseFloat(sliderExp.value);
+
+            // Trayectoria Solar (de 6:00 AM a 6:00 PM = Math.PI rad)
+            const anguloSol = ((hora - 6) / 12) * Math.PI;
+            const radioOrbita = 5.2;
+            const solX = -Math.cos(anguloSol) * radioOrbita - 0.2;
+            const solY = Math.max(0.2, Math.sin(anguloSol) * 4.6);
+            const solZ = 0.5 + Math.sin(anguloSol) * 2.4;
+
+            sunGroup.position.set(solX, solY, solZ);
+            sunLight.position.set(solX, solY, solZ);
+            sunLight.target.position.set(-0.75, 0.65, 0.2);
+            scene.add(sunLight.target);
+
+            // Factor de Radiación (campana senoidal según la hora solar)
+            const factorHora = Math.max(0, Math.sin(anguloSol));
+            const radSolarActual = Math.round(factorHora * datos.radMax);
+
+            // Temperatura ambiente diurna dinámica según SENAMHI:
+            // T_min al amanecer (6 AM) subiendo suavemente hacia T_max alrededor de las 13:00 - 14:00 hrs
+            const factorCurvaAmb = Math.max(0, Math.sin(((hora - 6) / 13) * Math.PI));
+            const tempAmbActual = datos.tempMin + factorCurvaAmb * (datos.tempMax - datos.tempMin);
+
+            // Factor de pérdidas por convección por viento (Vientos Paracas, brisa marina o calma andina)
+            const factorPerdidaViento = 1.0 + (datos.vientoVel / 100.0) * 0.25;
+
+            // Temperaturas Físicas Reales
+            // 1. Temperatura de la placa absorbedora (alcanza hasta ~70-75 °C al mediodía)
+            const deltaTPlaca = (factorHora * (datos.radMax / 950) * 51.0) / factorPerdidaViento;
+            const tempPlaca = tempAmbActual + deltaTPlaca;
+
+            // 2. Temperatura del agua acumulada en el termotanque
+            const deltaTAgua = (factorHora * (datos.radMax / 950) * 34.5) / (1.0 + (datos.vientoVel / 150.0));
+            const tempAgua = tempAmbActual + deltaTAgua;
+
+            // 3. Eficiencia térmica instantánea (Ecuación Hottel-Whillier-Bliss)
+            let eficiencia = 0;
+            if (radSolarActual > 80) {
+                const deltaTMedio = Math.max(0, (tempPlaca + tempAgua) / 2 - tempAmbActual);
+                eficiencia = Math.max(25, Math.min(78, (0.78 - (3.8 * deltaTMedio) / radSolarActual) * 100));
+            } else {
+                eficiencia = 0;
+            }
+
+            tempAmbGlobal = tempAmbActual;
+            tempPlacaGlobal = tempPlaca;
+            tempAguaGlobal = tempAgua;
+
+            // Actualización de materiales térmicos en tiempo real según la hora del sol:
+            // 1. Tubería roja de retorno cambia de color: a las 6 AM es azul (fría); a mediodía es roja viva
+            matRetorno.color.copy(obtenerColorTermico(tempPlaca));
+            // 2. Placa absorbedora cambia de tono térmico
+            matPlaca.color.copy(obtenerColorTermico(tempPlaca));
+            // 3. Textura de estratificación del termotanque (azul abajo, rojo arriba según temperatura)
+            actualizarTexturaEstratificacion(tempAmbActual, tempAgua);
+
+            // Actualización de Textos en la Interfaz
+            const horaInt = Math.floor(hora);
+            const mins = Math.floor((hora - horaInt) * 60);
+            const sufijo = hora >= 12 ? 'PM' : 'AM';
+            const horaDisplay = hora > 12 ? (horaInt - 12) : (horaInt === 0 ? 12 : horaInt);
+            document.getElementById('lbl-hora').innerText = `${horaDisplay}:${mins < 10 ? '0' : ''}${mins} ${sufijo} (${radSolarActual} W/m²)`;
+            document.getElementById('lbl-exp').innerText = `${Math.round(exp * 100)}%`;
+
+            // Métricas físicas principales
+            document.getElementById('val-temp-placa').innerText = `${tempPlaca.toFixed(1)} °C`;
+            document.getElementById('val-temp-agua').innerText = `${tempAgua.toFixed(1)} °C`;
+            document.getElementById('val-tiempo-45').innerText = `${datos.tMin.toFixed(1)} horas`;
+            const elEficiencia = document.getElementById('val-eficiencia');
+            if (elEficiencia) {
+                elEficiencia.innerText = eficiencia > 0 ? `${eficiencia.toFixed(1)}%` : '0.0% (Sin Sol)';
+            }
+
+            // Actualización de Ficha Oficial SENAMHI
+            const elFecha = document.getElementById('senamhi-fecha');
+            if (elFecha) {
+                const hoy = new Date();
+                const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Set', 'Oct', 'Nov', 'Dic'];
+                elFecha.innerText = `Boletín Diario • ${hoy.getDate()} ${meses[hoy.getMonth()]}`;
+            }
+            const elEstacion = document.getElementById('senamhi-estacion');
+            if (elEstacion) elEstacion.innerText = `📍 Estación: ${datos.estacion}`;
+            const elCielo = document.getElementById('senamhi-cielo');
+            if (elCielo) elCielo.innerText = datos.cielo;
+            const elTrango = document.getElementById('senamhi-trango');
+            if (elTrango) elTrango.innerText = `${datos.tempMin.toFixed(1)}° / ${datos.tempMax.toFixed(1)} °C`;
+            const elIuv = document.getElementById('senamhi-iuv');
+            if (elIuv) elIuv.innerText = `${radSolarActual} W/m² (IUV ${datos.iuv} máx)`;
+            const elViento = document.getElementById('senamhi-viento');
+            if (elViento) elViento.innerText = datos.vientoTexto;
+            const elHumedad = document.getElementById('senamhi-humedad');
+            if (elHumedad) elHumedad.innerText = datos.humedad;
+            const elAltitud = document.getElementById('senamhi-altitud');
+            if (elAltitud) elAltitud.innerText = datos.altitud;
+            const elDesc = document.getElementById('senamhi-desc');
+            if (elDesc) elDesc.innerText = datos.desc;
+
+            // Haz Solar dinámico
+            actualizarHazSolar(sunGroup.position, new THREE.Vector3(-0.75, 0.65, 0.2), factorHora);
+
+            // Despiece CAD Interactivo:
+            // El vidrio protector sube para despejar la vista
+            vidrioMesh.position.y = 0.065 + exp * 0.48;
+            // La placa absorbedora baja ligeramente para exponer las tuberías
+            placaMesh.position.y = 0.02 - exp * 0.08;
+            // La parrilla de tubos permanece empalmada sólidamente con las cañerías del circuito
+            tubosGroup.position.y = 0.0;
+            // La caja exterior baja para mostrar la base estructural
+            cajaMesh.position.y = -exp * 0.20;
+
+            // Separación del corte del termotanque en despiece
+            tanqueExtMesh.position.x = exp * 0.28;
+            aislanteMesh.position.x = exp * 0.14;
+
+            // Ajustar visualización de toggles
+            etiquetasGroup.visible = chkEtiquetas.checked;
+            hazGroup.visible = chkHaz.checked && (factorHora > 0.02);
+            grupoFlujo.visible = chkFlujo.checked;
+
+            actualizarChart(datos);
+        }
+
+        // Listeners de la interfaz
+        selectCiudad.addEventListener('change', actualizarSimulacion);
+        sliderHora.addEventListener('input', () => {
+            if (isPlaying) togglePlay();
+            actualizarSimulacion();
+        });
+        sliderExp.addEventListener('input', actualizarSimulacion);
+        chkEtiquetas.addEventListener('change', () => etiquetasGroup.visible = chkEtiquetas.checked);
+        chkHaz.addEventListener('change', () => {
+            const factor = Math.max(0, Math.sin(((parseFloat(sliderHora.value) - 6) / 12) * Math.PI));
+            hazGroup.visible = chkHaz.checked && (factor > 0.02);
+        });
+        chkFlujo.addEventListener('change', () => grupoFlujo.visible = chkFlujo.checked);
+
+        const selectModoFlujo = document.getElementById('select-modo-flujo');
+        if (selectModoFlujo) {
+            selectModoFlujo.addEventListener('change', () => {
+                const modo = selectModoFlujo.value;
+                document.getElementById('lbl-estado-flujo').innerText = (modo === 'fisico') ? 'Físico Real' : 'Demostración';
+            });
+        }
+
+        // Reproductor Automático del Día
+        function togglePlay() {
+            isPlaying = !isPlaying;
+            if (isPlaying) {
+                btnPlay.classList.add('active');
+                document.getElementById('play-icon').innerText = '⏸';
+                document.getElementById('play-text').innerText = 'Pausar';
+            } else {
+                btnPlay.classList.remove('active');
+                document.getElementById('play-icon').innerText = '▶';
+                document.getElementById('play-text').innerText = 'Reproducir Ciclo del Día';
+            }
+        }
+        btnPlay.addEventListener('click', togglePlay);
+
+        // --- 11. VENTANAS MODALES ---
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        window.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) e.target.style.display = 'none';
+        });
+
+        // --- 12. GRÁFICA TÉRMICA DINÁMICA CON CHART.JS ---
+        let chartInstance = null;
+        function actualizarChart(datos) {
+            const ctx = document.getElementById('chartCanvas');
+            if (!ctx) return;
+
+            const horas = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
+            const dataAmb = horas.map(h => {
+                const s = Math.max(0, Math.sin(((h - 6) / 13) * Math.PI));
+                return Number((datos.tempMin + s * (datos.tempMax - datos.tempMin)).toFixed(1));
+            });
+            const dataAgua = horas.map(h => {
+                const s = Math.max(0, Math.sin(((h - 6) / 12) * Math.PI));
+                const tAmb = datos.tempMin + Math.max(0, Math.sin(((h - 6) / 13) * Math.PI)) * (datos.tempMax - datos.tempMin);
+                const deltaT = (s * (datos.radMax / 950) * 34.5) / (1.0 + (datos.vientoVel / 150.0));
+                return Number((tAmb + deltaT).toFixed(1));
+            });
+            const dataPlaca = horas.map(h => {
+                const s = Math.max(0, Math.sin(((h - 6) / 12) * Math.PI));
+                const tAmb = datos.tempMin + Math.max(0, Math.sin(((h - 6) / 13) * Math.PI)) * (datos.tempMax - datos.tempMin);
+                const factorPerdidaViento = 1.0 + (datos.vientoVel / 100.0) * 0.25;
+                const deltaT = (s * (datos.radMax / 950) * 51.0) / factorPerdidaViento;
+                return Number((tAmb + deltaT).toFixed(1));
+            });
+
+            if (chartInstance) chartInstance.destroy();
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['6 AM', '7 AM', '8 AM', '9 AM', '10 AM', '11 AM', '12 PM', '1 PM', '2 PM', '3 PM', '4 PM', '5 PM', '6 PM'],
+                    datasets: [
+                        {
+                            label: '🔥 T. Placa Colectora (°C)',
+                            data: dataPlaca,
+                            borderColor: '#f87171',
+                            backgroundColor: 'rgba(248, 113, 113, 0.12)',
+                            fill: false,
+                            tension: 0.35,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#ef4444'
+                        },
+                        {
+                            label: '💧 T. Agua Termotanque (°C)',
+                            data: dataAgua,
+                            borderColor: '#38bdf8',
+                            backgroundColor: 'rgba(56, 189, 248, 0.12)',
+                            fill: false,
+                            tension: 0.35,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#0284c7'
+                        },
+                        {
+                            label: '🌤️ T. Ambiente SENAMHI (°C)',
+                            data: dataAmb,
+                            borderColor: '#facc15',
+                            backgroundColor: 'rgba(250, 204, 21, 0.08)',
+                            borderDash: [5, 5],
+                            fill: false,
+                            tension: 0.35,
+                            pointRadius: 3,
+                            pointBackgroundColor: '#eab308'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#f8fafc', font: { size: 11, weight: 'bold' } }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: (c) => `${c.dataset.label}: ${c.raw} °C`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: 'rgba(51, 65, 85, 0.45)' }
+                        },
+                        y: {
+                            ticks: { color: '#94a3b8', callback: (val) => `${val}°C` },
+                            grid: { color: 'rgba(51, 65, 85, 0.45)' },
+                            suggestedMin: 0,
+                            suggestedMax: 80
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- 13. LOOP DE RENDERIZADO Y ANIMACIÓN ---
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+
+            // Si el botón Play está activo, avanzamos las horas del día suavemente
+            if (isPlaying) {
+                let h = parseFloat(sliderHora.value) + playSpeed;
+                if (h > 18) h = 6; // Loop de 6:00 AM a 6:00 PM
+                sliderHora.value = h.toFixed(2);
+                actualizarSimulacion();
+            }
+
+            // Animación del termosifón de agua
+            if (chkFlujo.checked) {
+                actualizarFlujoAgua();
+            }
+
+            // Animación sutil de los rayos solares cayendo
+            if (chkHaz.checked && hazGroup.visible) {
+                const posiciones = geomRayos.attributes.position.array;
+                for (let i = 1; i < rayosCount * 3; i += 3) {
+                    posiciones[i] -= 0.035;
+                    if (posiciones[i] < 0) posiciones[i] = 4.5;
+                }
+                geomRayos.attributes.position.needsUpdate = true;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // Iniciar
+        actualizarSimulacion();
+        animate();
+
+        // Manejo de Redimensionado de Ventana
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
