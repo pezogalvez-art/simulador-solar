@@ -385,6 +385,52 @@
             gap: 12px;
         }
         #hint-box span { color: #e2e8f0; font-weight: 600; }
+
+        /* TOOLTIP FLOTANTE DE PUNTOS INTERACTIVOS 3D */
+        #hotspot-tooltip {
+            position: fixed;
+            display: none;
+            pointer-events: none;
+            z-index: 1000;
+            background: rgba(15, 23, 42, 0.94);
+            border: 1px solid rgba(56, 189, 248, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 14px;
+            padding: 13px 17px;
+            color: #f8fafc;
+            width: 290px;
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8), 0 0 25px rgba(56, 189, 248, 0.25);
+        }
+        .hotspot-tag {
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #38bdf8;
+            margin-bottom: 4px;
+        }
+        .hotspot-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 6px;
+            line-height: 1.3;
+        }
+        .hotspot-desc {
+            font-size: 0.80rem;
+            color: #cbd5e1;
+            line-height: 1.42;
+            margin-bottom: 6px;
+        }
+        .hotspot-extra {
+            font-size: 0.74rem;
+            color: #fbbf24;
+            font-weight: 600;
+            border-top: 1px solid rgba(255, 255, 255, 0.12);
+            padding-top: 6px;
+            margin-top: 4px;
+        }
     </style>
 
     <!-- Librerías 3D y Gráficos -->
@@ -395,6 +441,14 @@
 <body>
 
     <div id="canvas-container"></div>
+
+    <!-- TOOLTIP FLOTANTE DE PUNTOS INTERACTIVOS 3D -->
+    <div id="hotspot-tooltip">
+        <div class="hotspot-tag" id="tooltip-tag">COMPONENTE</div>
+        <div class="hotspot-title" id="tooltip-title">Título</div>
+        <div class="hotspot-desc" id="tooltip-desc">Descripción detallada...</div>
+        <div class="hotspot-extra" id="tooltip-extra">Detalle adicional</div>
+    </div>
 
     <!-- PANEL PRINCIPAL FLOTANTE -->
     <div id="ui-panel">
@@ -513,8 +567,12 @@
         <!-- Opciones de Visualización Didáctica -->
         <div class="toggle-box">
             <label class="toggle-item">
-                <span>🏷️ Etiquetas Explicativas 3D</span>
-                <input type="checkbox" id="chk-etiquetas" checked>
+                <span>🔘 Puntos Interactivos (Pase de ratón / Clic)</span>
+                <input type="checkbox" id="chk-hotspots" checked>
+            </label>
+            <label class="toggle-item">
+                <span>🏷️ Ver Todas las Etiquetas Fijas</span>
+                <input type="checkbox" id="chk-etiquetas">
             </label>
             <label class="toggle-item">
                 <span>✨ Haz de Luz Solar Concentrado</span>
@@ -536,8 +594,8 @@
     <!-- HINT NAVEGACIÓN -->
     <div id="hint-box">
         <div>🖱️ <span>Arrastrar:</span> Rotar 3D</div>
-        <div>🔍 <span>Rueda:</span> Acercar / Alejar</div>
-        <div>👆 <span>Clic Derecho:</span> Desplazar</div>
+        <div>🔍 <span>Rueda:</span> Zoom</div>
+        <div>💡 <span>Puntos brillantes:</span> Pasa el cursor o haz clic</div>
     </div>
 
     <!-- MODAL 1: GRÁFICA TÉRMICA -->
@@ -568,11 +626,11 @@
                 <div class="spec-card">
                     <div class="spec-icon">🛢️</div>
                     <div class="spec-body">
-                        <h3>Tanque de Almacenamiento (Termotanque)</h3>
+                        <h3>Tanque de Almacenamiento (Termotanque Horizontal Monobloc)</h3>
                         <p>
-                            Depósito cilíndrico vertical con capacidad para <b>200 Litros de agua</b>, suficiente para el consumo diario de una familia promedio de 4 a 5 integrantes.
+                            Depósito cilíndrico montado <b>horizontalmente en la cima de la estructura</b>, justo sobre la cabecera del colector solar. Almacena <b>200 Litros de agua</b> caliente para una familia de 4 a 5 personas, reduciendo la longitud de tuberías y minimizando pérdidas de calor.
                         </p>
-                        <div class="spec-badge">Capacidad: 200 Litros · Acero Inoxidable</div>
+                        <div class="spec-badge">Capacidad: 200 Litros · Montaje compacto en cabecera</div>
                     </div>
                 </div>
 
@@ -616,11 +674,23 @@
                 <div class="spec-card">
                     <div class="spec-icon">🚰</div>
                     <div class="spec-body">
-                        <h3>Circuito Cerrado y Siempre Lleno de Agua</h3>
+                        <h3>Circuito Continuo y Siempre Abastecido</h3>
                         <p>
-                            El sistema trabaja siempre presurizado y lleno con el agua de la red pública. Nunca se queda vacío: conforme una persona abre la ducha y usa agua caliente arriba, entra automáticamente agua fría por la base del tanque.
+                            El sistema se alimenta por gravedad desde el tanque elevado de la vivienda. Conforme una persona abre la ducha y consume agua caliente de la salida superior, ingresa automáticamente agua fría por la toma inferior lateral.
                         </p>
-                        <div class="spec-badge">Conexión directa a red doméstica</div>
+                        <div class="spec-badge">Alimentación continua por gravedad</div>
+                    </div>
+                </div>
+
+                <!-- Tarjeta 6: Purgador / Jarro de Aire -->
+                <div class="spec-card">
+                    <div class="spec-icon">💨</div>
+                    <div class="spec-body">
+                        <h3>Purgador Atmosférico (Jarro de Aire / Tubo de Venteo)</h3>
+                        <p>
+                            Tubo vertical abierto que se eleva por encima del nivel más alto del tanque. Cumple una doble función vital: <b>purga burbujas de aire</b> atrapadas durante el llenado y <b>alivia sobrepresión y vapor</b> en caso de sobrecalentamiento solar, evitando deformaciones del tanque.
+                        </p>
+                        <div class="spec-badge">Seguridad pasiva · Evita bolsas de aire y sobrepresión</div>
                     </div>
                 </div>
             </div>
@@ -749,7 +819,7 @@
         scene.fog = new THREE.FogExp2(0x070a13, 0.04);
 
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(3.8, 2.5, 4.4);
+        camera.position.set(2.4, 2.3, 3.6);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -761,7 +831,7 @@
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
-        controls.target.set(0.1, 1.1, 0);
+        controls.target.set(-0.65, 1.15, 0.0);
         controls.maxPolarAngle = Math.PI / 2 - 0.02; // No descender por debajo del suelo
 
         // Iluminación
@@ -841,30 +911,41 @@
             return col;
         }
 
-        // Textura Dinámica de Estratificación Térmica del Tanque (Actualizada continuamente)
+        // Textura Dinámica de Estratificación Térmica del Tanque Horizontal
+        // Física real: zona caliente crece desde la cima (U≈0.25) hacia el fondo (U≈0.75)
+        // proporcional al factor solar del momento.  factorEstrat: 0=todo frío, 1=todo caliente.
+        let factorEstrat = 0.0;
         const canvasEstrat = document.createElement('canvas');
-        canvasEstrat.width = 64;
-        canvasEstrat.height = 256;
+        canvasEstrat.width = 512;
+        canvasEstrat.height = 64;
         const ctxEstrat = canvasEstrat.getContext('2d');
         const texAgua = new THREE.CanvasTexture(canvasEstrat);
 
-        function actualizarTexturaEstratificacion(tempBase, tempTop) {
-            ctxEstrat.clearRect(0, 0, 64, 256);
-            const grad = ctxEstrat.createLinearGradient(0, 256, 0, 0); // de abajo hacia arriba
-            const colBase = '#' + obtenerColorTermico(tempBase).getHexString();
-            const colTop = '#' + obtenerColorTermico(tempTop).getHexString();
-            const colMid = '#' + obtenerColorTermico((tempBase + tempTop) * 0.5).getHexString();
+        function actualizarTexturaEstratificacion(tempFria, tempCaliente, factor) {
+            ctxEstrat.clearRect(0, 0, 512, 64);
+            // En el cilindro horizontal mapeado en UV:
+            //   U ~ 0.25  ->  cima del cilindro  (caliente)
+            //   U ~ 0.75  ->  fondo del cilindro  (frio)
+            // La frontera termica se desplaza segun 'factor' (0=todo frio, 1=todo caliente).
+            const uFrontera = 0.25 + factor * 0.50; // [0.25 ... 0.75]
+            const ancho = 512;
+            const colFrio  = '#' + obtenerColorTermico(tempFria).getHexString();
+            const colCal   = '#' + obtenerColorTermico(tempCaliente).getHexString();
+            const colFront = '#' + obtenerColorTermico((tempFria + tempCaliente) * 0.5).getHexString();
 
-            grad.addColorStop(0.0, colBase);
-            grad.addColorStop(0.35, colBase);
-            grad.addColorStop(0.68, colMid);
-            grad.addColorStop(1.0, colTop);
+            const grad = ctxEstrat.createLinearGradient(0, 0, ancho, 0);
+            grad.addColorStop(0.00, colCal);
+            grad.addColorStop(Math.max(0, uFrontera - 0.07), colCal);
+            grad.addColorStop(uFrontera, colFront);
+            grad.addColorStop(Math.min(1, uFrontera + 0.07), colFrio);
+            grad.addColorStop(1.00, colFrio);
+
             ctxEstrat.fillStyle = grad;
-            ctxEstrat.fillRect(0, 0, 64, 256);
+            ctxEstrat.fillRect(0, 0, ancho, 64);
             texAgua.needsUpdate = true;
         }
 
-        actualizarTexturaEstratificacion(18, 18);
+        actualizarTexturaEstratificacion(18, 18, 0);
 
         const matAguaEstratificada = new THREE.MeshStandardMaterial({
             map: texAgua,
@@ -950,69 +1031,118 @@
         // Patas cortas delanteras del colector (en el suelo)
         crearPerfilSoporte(-1.24, 0, 0.95, -1.24, 0.28, 0.95);
         crearPerfilSoporte(-0.26, 0, 0.95, -0.26, 0.28, 0.95);
-        // Patas altas traseras del colector
-        crearPerfilSoporte(-1.24, 0, -0.65, -1.24, 1.18, -0.65);
-        crearPerfilSoporte(-0.26, 0, -0.65, -0.26, 1.18, -0.65);
-        // Travesaños diagonales de refuerzo
+        // Patas altas traseras del colector (se elevan para soportar la cuna del termotanque horizontal)
+        crearPerfilSoporte(-1.24, 0, -0.65, -1.24, 1.40, -0.65);
+        crearPerfilSoporte(-0.26, 0, -0.65, -0.26, 1.40, -0.65);
+        // Travesaños diagonales de refuerzo del bastidor
         crearPerfilSoporte(-1.24, 0, 0.95, -1.24, 1.18, -0.65);
         crearPerfilSoporte(-0.26, 0, 0.95, -0.26, 1.18, -0.65);
         crearPerfilSoporte(-1.24, 0.3, -0.65, -0.26, 0.3, -0.65);
+        // Brazos de soporte y cunas superiores para el termotanque horizontal
+        crearPerfilSoporte(-1.24, 1.18, -0.65, -1.24, 1.40, -0.72);
+        crearPerfilSoporte(-0.26, 1.18, -0.65, -0.26, 1.40, -0.72);
+        crearPerfilSoporte(-1.24, 1.40, -0.72, -0.26, 1.40, -0.72);
 
-        // --- 5. GEOMETRÍA 3D DEL TERMOTANQUE (VERTICAL CON CORTE SECCIONAL) ---
-        // Ubicado verticalmente a la derecha (X ≈ 0.85)
-        const tanquePos = new THREE.Vector3(0.85, 1.35, 0.05);
+        // --- 5. GEOMETRÍA 3D DEL TERMOTANQUE HORIZONTAL (MONOBLOC EN CABECERA) ---
+        // Ubicado horizontalmente sobre la parte superior del colector (X ≈ -0.75, Y ≈ 1.45, Z ≈ -0.72)
+        const tanquePos = new THREE.Vector3(-0.75, 1.45, -0.72);
         const tanqueGroup = new THREE.Group();
         tanqueGroup.position.copy(tanquePos);
         mainGroup.add(tanqueGroup);
 
-        const alturaTanque = 1.25;
-        const radioExterior = 0.36;
-        const radioAislante = 0.33;
-        const radioInterior = 0.28;
-        const anguloCorte = Math.PI * 1.35; // Corte visible frontal (~240° cilíndrico)
-        const inicioAngulo = Math.PI * 0.45;
+        const longitudTanque = 1.16; // Largo horizontal a través del ancho del colector
+        const radioExterior = 0.25;  // Diámetro exterior 50 cm
+        const radioAislante = 0.23;  // Espesor 50 mm de PUR
+        const radioInterior = 0.19;  // Núcleo de agua útil ~200L
+        const anguloCorte = Math.PI * 1.40; // Corte frontal visible (~250°)
+        const inicioAngulo = 1.10; // Deja abierta la ventana visual frontal-superior hacia la cámara
 
-        // Capa 1: Carcasa Metálica Exterior con Corte
+        // Capa 1: Carcasa Cilíndrica Exterior con Corte Didáctico
         const geomTanqueExt = new THREE.CylinderGeometry(
-            radioExterior, radioExterior, alturaTanque, 32, 1, false, inicioAngulo, anguloCorte
+            radioExterior, radioExterior, longitudTanque, 32, 1, false, inicioAngulo, anguloCorte
         );
         const tanqueExtMesh = new THREE.Mesh(geomTanqueExt, matTanqueMetal);
+        tanqueExtMesh.rotation.z = Math.PI / 2; // Orientado horizontalmente a lo largo del eje X
         tanqueExtMesh.castShadow = true;
         tanqueGroup.add(tanqueExtMesh);
 
-        // Tapas superior e inferior metálicas
-        const tapaSup = new THREE.Mesh(new THREE.CylinderGeometry(radioExterior + 0.01, radioExterior + 0.01, 0.04, 32), matTanqueMetal);
-        tapaSup.position.y = alturaTanque / 2;
-        tanqueGroup.add(tapaSup);
+        // Tapas circulares laterales metálicas (extremos del cilindro)
+        const geomTapa = new THREE.CylinderGeometry(radioExterior + 0.008, radioExterior + 0.008, 0.035, 32);
+        // Tapa izquierda
+        const tapaIzq = new THREE.Mesh(geomTapa, matTanqueMetal);
+        tapaIzq.rotation.z = Math.PI / 2;
+        tapaIzq.position.x = -longitudTanque / 2;
+        tanqueGroup.add(tapaIzq);
 
-        const tapaInf = new THREE.Mesh(new THREE.CylinderGeometry(radioExterior + 0.01, radioExterior + 0.01, 0.04, 32), matTanqueMetal);
-        tapaInf.position.y = -alturaTanque / 2;
-        tanqueGroup.add(tapaInf);
+        // Tapa derecha (cara circular metálica visible con tomas de agua como en la foto)
+        const matTapaPlata = new THREE.MeshStandardMaterial({ color: 0xcfd8dc, metalness: 0.8, roughness: 0.2 });
+        const tapaDer = new THREE.Mesh(geomTapa, matTapaPlata);
+        tapaDer.rotation.z = Math.PI / 2;
+        tapaDer.position.x = longitudTanque / 2;
+        tanqueGroup.add(tapaDer);
 
-        // Capa 2: Aislamiento Térmico de Poliuretano PUR (Amarillo)
+        // Capa 2: Aislamiento Térmico de Poliuretano PUR 50mm (Color Amarillo en el corte)
         const geomAislante = new THREE.CylinderGeometry(
-            radioAislante, radioAislante, alturaTanque - 0.04, 32, 1, false, inicioAngulo, anguloCorte
+            radioAislante, radioAislante, longitudTanque - 0.04, 32, 1, false, inicioAngulo, anguloCorte
         );
         const aislanteMesh = new THREE.Mesh(geomAislante, matPoliuretano);
+        aislanteMesh.rotation.z = Math.PI / 2;
         tanqueGroup.add(aislanteMesh);
 
-        // Capa 3: Núcleo de Agua con Estratificación Térmica (Degradado Azul -> Rojo)
+        // Capa 3: Núcleo de Agua Cilíndrico con Estratificación Térmica (Frío azul abajo -> Caliente rojo arriba)
         const geomAgua = new THREE.CylinderGeometry(
-            radioInterior, radioInterior, alturaTanque - 0.08, 32, 1, false, 0, Math.PI * 2
+            radioInterior, radioInterior, longitudTanque - 0.06, 32, 1, false, 0, Math.PI * 2
         );
         const aguaMesh = new THREE.Mesh(geomAgua, matAguaEstratificada);
+        aguaMesh.rotation.z = Math.PI / 2;
         tanqueGroup.add(aguaMesh);
 
-        // Patas de soporte del termotanque (lo elevan sobre el suelo)
-        const patasTanqueGroup = new THREE.Group();
-        mainGroup.add(patasTanqueGroup);
-        const hPatas = tanquePos.y - alturaTanque / 2;
-        crearPerfilSoporte(tanquePos.x - 0.22, 0, tanquePos.z - 0.22, tanquePos.x - 0.22, hPatas, tanquePos.z - 0.22);
-        crearPerfilSoporte(tanquePos.x + 0.22, 0, tanquePos.z - 0.22, tanquePos.x + 0.22, hPatas, tanquePos.z - 0.22);
-        crearPerfilSoporte(tanquePos.x - 0.22, 0, tanquePos.z + 0.22, tanquePos.x - 0.22, hPatas, tanquePos.z + 0.22);
-        crearPerfilSoporte(tanquePos.x + 0.22, 0, tanquePos.z + 0.22, tanquePos.x + 0.22, hPatas, tanquePos.z + 0.22);
+        // Cunas metálicas curvas de apoyo bajo el termotanque horizontal
+        const cunaMat = matSoporte;
+        const geomCuna = new THREE.TorusGeometry(radioExterior + 0.015, 0.015, 8, 24, Math.PI * 0.75);
+        const cuna1 = new THREE.Mesh(geomCuna, cunaMat);
+        cuna1.rotation.y = Math.PI / 2;
+        cuna1.rotation.z = Math.PI * 0.625;
+        cuna1.position.set(-longitudTanque * 0.35, 0, 0);
+        tanqueGroup.add(cuna1);
 
-        // --- 6. TUBERÍAS DEL CIRCUITO CERRADO ---
+        const cuna2 = new THREE.Mesh(geomCuna, cunaMat);
+        cuna2.rotation.y = Math.PI / 2;
+        cuna2.rotation.z = Math.PI * 0.625;
+        cuna2.position.set(longitudTanque * 0.35, 0, 0);
+        tanqueGroup.add(cuna2);
+
+        // --- 5.1 EL PURGADOR ATMOSFÉRICO / JARRO DE AIRE (Tubo de Venteo) ---
+        // Nace de la cima del termotanque y sube verticalmente hasta la cota más alta (Y ≈ 2.40 m)
+        const purgadorGroup = new THREE.Group();
+        mainGroup.add(purgadorGroup);
+
+        const matPurgador = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, metalness: 0.2, roughness: 0.35 }); // CPVC blanco alta temperatura
+        const pBasePurgador = new THREE.Vector3(-0.35, tanquePos.y + radioExterior, tanquePos.z);
+        const pCodoPurgador = new THREE.Vector3(-0.35, 2.38, tanquePos.z);
+        const pPicoPurgador = new THREE.Vector3(-0.30, 2.38, tanquePos.z);
+        const pSalidaGases = new THREE.Vector3(-0.30, 2.30, tanquePos.z);
+
+        function crearTramo(p1, p2, mat, radio = 0.012) {
+            const v1 = (p1 instanceof THREE.Vector3) ? p1 : new THREE.Vector3(...p1);
+            const v2 = (p2 instanceof THREE.Vector3) ? p2 : new THREE.Vector3(...p2);
+            const dir = new THREE.Vector3().subVectors(v2, v1);
+            const len = dir.length();
+            const geom = new THREE.CylinderGeometry(radio, radio, len, 16);
+            const mesh = new THREE.Mesh(geom, mat);
+            mesh.position.copy(v1).add(dir.clone().multiplyScalar(0.5));
+            mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+            mesh.castShadow = true;
+            purgadorGroup.add(mesh);
+            return mesh;
+        }
+
+        crearTramo(pBasePurgador, pCodoPurgador, matPurgador, 0.013);
+        // Codo de retorno invertido a 180° (anti-lluvia) en la punta del jarro de aire
+        crearTramo(pCodoPurgador, pPicoPurgador, matPurgador, 0.013);
+        crearTramo(pPicoPurgador, pSalidaGases, matPurgador, 0.013);
+
+        // --- 6. TUBERÍAS DEL CIRCUITO TERMOSIFÓNICO COMPACTO ---
         const tuberiasGroup = new THREE.Group();
         mainGroup.add(tuberiasGroup);
 
@@ -1030,36 +1160,43 @@
             return mesh;
         }
 
-        // Puntos Clave para Empalme Milimétrico Perfecto (0 mm de holgura):
-        // La base del termotanque está en X=0.85, Y=0.72, Z=0.05
-        const pTanqueFrio = new THREE.Vector3(0.85, 0.72, 0.05);
-        
-        // Empalme exacto con el cabezal inferior del colector solar:
-        // El extremo derecho del cabezal inferior se ubica exactamente en (-0.270, 0.275, 0.919)
-        const pEntradaColector = new THREE.Vector3(-0.270, 0.275, 0.919);
-        const pCodoBajo1 = new THREE.Vector3(0.85, 0.275, 0.05);
-        const pCodoBajo2 = new THREE.Vector3(0.85, 0.275, 0.919);
+        // PUNTOS CLAVE PARA EMPALMES HIDRÁULICOS (0 mm de holgura):
+        // 1. Tubería Azul de Bajada Fría (Fondo del tanque horizontal -> Cabezal inferior del colector)
+        const pTanqueFrio = new THREE.Vector3(-0.220, tanquePos.y - radioExterior + 0.02, tanquePos.z);
+        const pCodoBajo1 = new THREE.Vector3(-0.220, 0.275, tanquePos.z);
+        const pCodoBajo2 = new THREE.Vector3(-0.220, 0.275, 0.919);
+        const pEntradaColector = new THREE.Vector3(-0.270, 0.275, 0.919); // Empalme directo cabezal inferior
 
-        // Tubería Azul (1. Entrada de Agua Fría - baja por gravedad y empalma directamente)
         crearTramoTuberia(pTanqueFrio, pCodoBajo1, matBaja);
         crearTramoTuberia(pCodoBajo1, pCodoBajo2, matBaja);
         crearTramoTuberia(pCodoBajo2, pEntradaColector, matBaja);
 
-        // Empalme exacto con el cabezal superior del colector solar:
-        // El extremo derecho del cabezal superior se ubica exactamente en (-0.270, 1.085, -0.484)
-        const pSalidaColector = new THREE.Vector3(-0.270, 1.085, -0.484);
-        const pCodoAlto1 = new THREE.Vector3(0.48, 1.085, -0.484);
-        const pCodoAlto2 = new THREE.Vector3(0.48, 1.085, 0.05);
-        const pCodoAlto3 = new THREE.Vector3(0.48, 1.72, 0.05);
-        const pEntradaTanqueCaliente = new THREE.Vector3(0.55, 1.72, 0.05);
+        // 2. Tubería Roja de Retorno Caliente (Cabezal superior colector -> Tapa derecha del termotanque)
+        // Recorrido exterior 100% continuo, unido y visible (sin cortes ni partes ocultas dentro del cilindro)
+        const xTapaDer = tanquePos.x + longitudTanque / 2; // X = -0.75 + 0.58 = -0.17
+        const xRiserExt = -0.09; // 8 cm a la derecha de la tapa para librar el volumen cilíndrico del tanque
 
-        // Tubería Roja (3. Retorno de Agua Caliente - sube naturalmente y empalma directamente)
-        crearTramoTuberia(pSalidaColector, pCodoAlto1, matRetorno);
-        crearTramoTuberia(pCodoAlto1, pCodoAlto2, matRetorno);
-        crearTramoTuberia(pCodoAlto2, pCodoAlto3, matRetorno);
-        crearTramoTuberia(pCodoAlto3, pEntradaTanqueCaliente, matRetorno);
+        const pSalidaColector = new THREE.Vector3(-0.270, 1.085, -0.484); // Empalme directo cabezal superior
+        const pCodoDerBajo    = new THREE.Vector3(xRiserExt, 1.085, -0.484); // Extensión horizontal derecha
+        const pCodoDerAlto    = new THREE.Vector3(xRiserExt, 1.55, -0.72);  // Tramo ascendente exterior
+        const pEntradaTanqueCaliente = new THREE.Vector3(xTapaDer, 1.55, -0.72); // Empalme perpendicular en tapa derecha
 
-        // Bridas / Niples de empalme reforzados en los puntos de acople del colector
+        // Tramos de tubería unidos sin separación
+        crearTramoTuberia(pSalidaColector, pCodoDerBajo, matRetorno);
+        crearTramoTuberia(pCodoDerBajo, pCodoDerAlto, matRetorno);
+        crearTramoTuberia(pCodoDerAlto, pEntradaTanqueCaliente, matRetorno);
+
+        // Codos redondeados de unión perfecta (sin juntas abiertas ni separaciones)
+        const geomCodoJunta = new THREE.SphereGeometry(0.019, 16, 16);
+        const codoInfMesh = new THREE.Mesh(geomCodoJunta, matRetorno);
+        codoInfMesh.position.copy(pCodoDerBajo);
+        tuberiasGroup.add(codoInfMesh);
+
+        const codoSupMesh = new THREE.Mesh(geomCodoJunta, matRetorno);
+        codoSupMesh.position.copy(pCodoDerAlto);
+        tuberiasGroup.add(codoSupMesh);
+
+        // Bridas / Niples de cobre de acople industrial reforzados
         const geomBrida = new THREE.CylinderGeometry(0.024, 0.024, 0.05, 16);
         const bridaFria = new THREE.Mesh(geomBrida, matCobre);
         bridaFria.rotation.z = Math.PI / 2;
@@ -1071,12 +1208,26 @@
         bridaCaliente.position.copy(pSalidaColector);
         mainGroup.add(bridaCaliente);
 
-        // Conexiones de Red Adicionales (como en la infografía):
-        // Entrada de agua fría de red (tubito celeste lateral abajo a la derecha)
-        crearTramoTuberia([1.18, 0.85, 0.2], [1.38, 0.80, 0.28], matBaja, 0.014);
-        // Salida de agua caliente para consumo (tubito rojo arriba saliendo en cuello curvo)
-        crearTramoTuberia([0.85, 1.95, 0.05], [0.85, 2.15, 0.05], matRetorno, 0.016);
-        crearTramoTuberia([0.85, 2.15, 0.05], [1.12, 2.22, 0.05], matRetorno, 0.016);
+        const bridaTanqueCaliente = new THREE.Mesh(geomBrida, matCobre);
+        bridaTanqueCaliente.rotation.z = Math.PI / 2;
+        bridaTanqueCaliente.position.copy(pEntradaTanqueCaliente);
+        mainGroup.add(bridaTanqueCaliente);
+
+        // 3. Conexiones Domiciliarias en el Lado Izquierdo (Opuesto al circuito solar para máxima claridad):
+        const xTapaIzq = tanquePos.x - longitudTanque / 2;
+        // Toma de entrada de agua fría de red (blanca en la parte baja de la tapa izquierda)
+        const pRed1 = new THREE.Vector3(xTapaIzq, tanquePos.y - 0.12, tanquePos.z);
+        const pRed2 = new THREE.Vector3(xTapaIzq - 0.14, tanquePos.y - 0.12, tanquePos.z);
+        const pRed3 = new THREE.Vector3(xTapaIzq - 0.14, 0.75, tanquePos.z);
+        crearTramoTuberia(pRed1, pRed2, matBaja, 0.014);
+        crearTramoTuberia(pRed2, pRed3, matBaja, 0.014);
+
+        // Toma de salida de agua caliente para consumo/ducha (en la parte alta de la tapa izquierda)
+        const pCons1 = new THREE.Vector3(xTapaIzq, tanquePos.y + 0.12, tanquePos.z);
+        const pCons2 = new THREE.Vector3(xTapaIzq - 0.16, tanquePos.y + 0.12, tanquePos.z);
+        const pCons3 = new THREE.Vector3(xTapaIzq - 0.16, 0.85, tanquePos.z);
+        crearTramoTuberia(pCons1, pCons2, matRetorno, 0.016);
+        crearTramoTuberia(pCons2, pCons3, matRetorno, 0.016);
 
         // --- 7. HAZ DE LUZ SOLAR VOLUMÉTRICO Y RAYOS ---
         const hazGroup = new THREE.Group();
@@ -1137,21 +1288,22 @@
             pEntradaColector.clone()
         ]);
 
-        // Curva 2: Tubería Roja de Retorno Caliente (Cabezal Superior -> Termotanque)
+        // Curva 2: Tubería Roja de Retorno Caliente (Cabezal Superior -> Tapa Derecha Termotanque)
         const curvaRetorno = new THREE.CatmullRomCurve3([
             pSalidaColector.clone(),
-            pCodoAlto1.clone(),
-            pCodoAlto2.clone(),
-            pCodoAlto3.clone(),
+            pCodoDerBajo.clone(),
+            pCodoDerAlto.clone(),
             pEntradaTanqueCaliente.clone()
         ]);
 
-        // Curva 3: Circulación Interna en el Termotanque
+        // Curva 3: Circulación Interna en el Termotanque Horizontal (derecha -> izquierda)
         const curvaTanque = new THREE.CatmullRomCurve3([
             pEntradaTanqueCaliente.clone(),
-            new THREE.Vector3(0.85, 1.70, 0.05),
-            new THREE.Vector3(0.85, 1.25, 0.05),
-            new THREE.Vector3(0.85, 0.85, 0.05),
+            new THREE.Vector3(-0.45, tanquePos.y + 0.10, tanquePos.z),
+            new THREE.Vector3(-0.75, tanquePos.y + 0.08, tanquePos.z),
+            new THREE.Vector3(-1.05, tanquePos.y + 0.02, tanquePos.z),
+            new THREE.Vector3(-0.95, tanquePos.y - 0.10, tanquePos.z),
+            new THREE.Vector3(-0.55, tanquePos.y - 0.12, tanquePos.z),
             pTanqueFrio.clone()
         ]);
 
@@ -1322,33 +1474,156 @@
             return sprite;
         }
 
-        // Posiciones estratégicas de las etiquetas según la infografía técnica
-        // 1. Título principal del Termotanque (destacado y elevado para no interferir con cañerías)
-        const lblTermotanque = crearEtiqueta3D("TANQUE DE ALMACENAMIENTO (TERMOTANQUE 200L)", "#0f172a", "#38bdf8", 0.19);
-        lblTermotanque.position.set(0.85, 2.70, 0.05);
+        // Posiciones estratégicas de las etiquetas según la infografía técnica y prototipo real
+        // 1. Título principal del Termotanque Horizontal Monobloc
+        const lblTermotanque = crearEtiqueta3D("TANQUE DE ALMACENAMIENTO (TERMOTANQUE HORIZONTAL 200L)", "#0f172a", "#38bdf8", 0.19);
+        lblTermotanque.position.set(-0.75, 1.95, -0.72);
 
-        // 2. Salida de agua caliente para consumo (a la derecha de la salida superior)
-        const lblSalidaCaliente = crearEtiqueta3D("SALIDA DE AGUA CALIENTE (Para consumo / ducha)", "#7f1d1d", "#f87171", 0.15);
-        lblSalidaCaliente.position.set(1.72, 2.22, 0.05);
+        // 2. Purgador Atmosférico / Jarro de aire (en la cima del tubo vertical)
+        const lblPurgador = crearEtiqueta3D("4. PURGADOR / JARRO DE AIRE (Alivio de gases y vapor)", "#0f172a", "#facc15", 0.15);
+        lblPurgador.position.set(-0.35, 2.50, -0.72);
 
-        // 3. Entrada de agua fría de la red que abastece el termotanque
-        const lblEntradaRed = crearEtiqueta3D("ENTRADA DE AGUA FRÍA DE LA RED", "#0369a1", "#38bdf8", 0.15);
-        lblEntradaRed.position.set(1.76, 0.82, 0.28);
+        // 3. Salida de agua caliente para consumo (tapa lateral izquierda)
+        const lblSalidaCaliente = crearEtiqueta3D("SALIDA DE AGUA CALIENTE (Para consumo / ducha)", "#7f1d1d", "#f87171", 0.14);
+        lblSalidaCaliente.position.set(-1.62, 1.58, -0.72);
 
-        // 4. Circuito Termosifónico (Entrada de agua fría que baja por gravedad)
+        // 4. Entrada de agua fría de la red que abastece el termotanque (tapa lateral izquierda)
+        const lblEntradaRed = crearEtiqueta3D("ENTRADA DE AGUA FRÍA DE LA RED", "#0369a1", "#38bdf8", 0.14);
+        lblEntradaRed.position.set(-1.62, 1.25, -0.72);
+
+        // 5. Circuito Termosifónico (Entrada de agua fría que baja por gravedad)
         const lblEntradaFria = crearEtiqueta3D("1. ENTRADA DE AGUA FRÍA (Baja por gravedad)", "#0369a1", "#38bdf8", 0.15);
-        lblEntradaFria.position.set(0.32, 0.38, 0.92);
+        lblEntradaFria.position.set(-0.15, 0.65, 0.10);
 
-        // 5. Colector Solar y Zona de Calentamiento
-        const lblCalentamiento = crearEtiqueta3D("2. CALENTAMIENTO SOLAR (Radiación)", "#b45309", "#fbbf24", 0.15);
-        lblCalentamiento.position.set(-1.48, 0.72, 0.15);
+        // 6. Colector Solar y Zona de Calentamiento
+        const lblCalentamiento = crearEtiqueta3D("2. CALENTAMIENTO SOLAR (8 Tubos en paralelo)", "#b45309", "#fbbf24", 0.15);
+        lblCalentamiento.position.set(-1.48, 0.70, 0.15);
 
         const lblColector = crearEtiqueta3D("COLECTOR SOLAR DE PLACA PLANA (2.0 m²)", "#1e293b", "#fbbf24", 0.16);
-        lblColector.position.set(-0.75, 1.42, 0.20);
+        lblColector.position.set(-0.75, 1.38, 0.20);
 
-        // 6. Retorno de agua caliente al termotanque
-        const lblRetornoCaliente = crearEtiqueta3D("3. RETORNO DE AGUA CALIENTE (Sube naturalmente)", "#b91c1c", "#f87171", 0.15);
-        lblRetornoCaliente.position.set(0.10, 1.50, -0.48);
+        // 7. Retorno de agua caliente al termotanque (lado derecho, entrada al tanque)
+        const lblRetornoCaliente = crearEtiqueta3D("3. RETORNO DE AGUA CALIENTE (Sube al termotanque)", "#b91c1c", "#f87171", 0.15);
+        lblRetornoCaliente.position.set(0.18, 1.55, -0.72);
+
+        // --- 9b. SISTEMA INTERACTIVO DE PUNTOS CALIENTES (HOTSPOTS) ---
+        // Definición de los 7 puntos de interés con posición 3D, etiqueta, título, descripción y color
+        const hotspotDefs = [
+            {
+                pos: new THREE.Vector3(-0.75, 1.45, -0.72),
+                tag: 'TERMOTANQUE',
+                title: 'Tanque de Almacenamiento Horizontal (200 L)',
+                desc: 'Cilindro de acero inoxidable con aislamiento PUR 50 mm. El agua caliente flota en la zona superior y el agua fría permanece en el fondo (estratificación térmica).',
+                extra: '💡 El corte seccional muestra las 3 capas internas.',
+                color: 0x38bdf8
+            },
+            {
+                pos: new THREE.Vector3(-0.35, 2.10, -0.72),
+                tag: 'PURGADOR / JARRO DE AIRE',
+                title: 'Tubo de Venteo Atmosférico',
+                desc: 'Tubería vertical abierta a la atmósfera. Purga burbujas de aire durante el llenado inicial y alivia sobrepresión de vapor generada por el calor solar.',
+                extra: '⚠️ Seguridad pasiva — nunca bloquear este tubo.',
+                color: 0xfacc15
+            },
+            {
+                pos: new THREE.Vector3(-0.09, 1.55, -0.72),
+                tag: 'INGRESO AGUA CALIENTE',
+                title: 'Retorno Caliente al Termotanque (Circuito Solar)',
+                desc: 'El agua calentada en los 8 tubos del colector sube por termosifón y entra por la tapa derecha del termotanque, en la zona más caliente del volumen.',
+                extra: '🌡️ Temperatura de entrada: hasta 70 °C al mediodía.',
+                color: 0xef4444
+            },
+            {
+                pos: new THREE.Vector3(-0.220, 1.22, -0.72),
+                tag: 'SALIDA AGUA FRÍA AL COLECTOR',
+                title: 'Bajada Fría hacia el Colector Solar',
+                desc: 'El agua fría del fondo del termotanque desciende por gravedad hacia el colector para calentarse. Circulación 100% natural sin bomba.',
+                extra: '💧 Sin bomba — funciona por diferencia de densidades.',
+                color: 0x0284c7
+            },
+            {
+                pos: new THREE.Vector3(-1.33, 1.57, -0.72),
+                tag: 'SALIDA AGUA CALIENTE (CONSUMO)',
+                title: 'Salida Doméstica de Agua Caliente',
+                desc: 'Toma de agua caliente para el consumo diario (ducha, cocina). Se conecta directamente a la red domiciliaria de agua caliente del hogar.',
+                extra: '🚿 Hasta 45 °C disponibles en 2–4 horas según ciudad.',
+                color: 0xf87171
+            },
+            {
+                pos: new THREE.Vector3(-1.33, 1.33, -0.72),
+                tag: 'ENTRADA AGUA FRÍA DE RED',
+                title: 'Alimentación de Agua Fría Municipal',
+                desc: 'Toma de alimentación del agua de red (o tinaco). Mantiene el sistema siempre presurizado y lleno automáticamente cuando se consume agua caliente.',
+                extra: '🏗️ Alimentación continua por presión de red pública.',
+                color: 0x38bdf8
+            },
+            {
+                pos: new THREE.Vector3(-0.75, 0.65, 0.2),
+                tag: 'COLECTOR SOLAR',
+                title: 'Colector de Placa Plana (2,0 m²)',
+                desc: 'Panel con 8 tubos de cobre paralelos, placa absorbedora negra selectiva y vidrio templado de bajo hierro. Absorbe hasta el 95% de la radiación solar incidente.',
+                extra: '☀️ Rendimiento máximo en Arequipa: ≈1 020 W/m².',
+                color: 0xfbbf24
+            }
+        ];
+
+        // Crear esferas visibles pulsantes para cada hotspot
+        const hotspotMeshes = [];
+        hotspotDefs.forEach(h => {
+            const geo = new THREE.SphereGeometry(0.058, 16, 16);
+            const mat = new THREE.MeshBasicMaterial({ color: h.color, transparent: true, opacity: 0.88, depthTest: false });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.copy(h.pos);
+            mesh.userData = h;
+            mesh.renderOrder = 999; // Siempre visible sobre la escena
+            mainGroup.add(mesh);
+            hotspotMeshes.push(mesh);
+        });
+
+        // Raycaster y seguimiento del ratón
+        const raycaster = new THREE.Raycaster();
+        const mouse2D = new THREE.Vector2();
+        const tooltipEl = document.getElementById('hotspot-tooltip');
+        const chkHotspots = document.getElementById('chk-hotspots');
+
+        renderer.domElement.addEventListener('mousemove', (e) => {
+            if (!chkHotspots || !chkHotspots.checked) { if (tooltipEl) tooltipEl.style.display = 'none'; return; }
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse2D.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse2D.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(mouse2D, camera);
+            const hits = raycaster.intersectObjects(hotspotMeshes);
+            if (hits.length > 0) {
+                const h = hits[0].object.userData;
+                document.getElementById('tooltip-tag').innerText = h.tag;
+                document.getElementById('tooltip-title').innerText = h.title;
+                document.getElementById('tooltip-desc').innerText = h.desc;
+                document.getElementById('tooltip-extra').innerText = h.extra;
+                tooltipEl.style.display = 'block';
+                // Posicionar tooltip evitando que salga del borde derecho/inferior
+                const tw = 300;
+                const th = 140;
+                const left = Math.min(e.clientX + 14, window.innerWidth - tw - 10);
+                const top  = Math.min(e.clientY + 14, window.innerHeight - th - 10);
+                tooltipEl.style.left = left + 'px';
+                tooltipEl.style.top  = top  + 'px';
+                document.body.style.cursor = 'pointer';
+            } else {
+                if (tooltipEl) tooltipEl.style.display = 'none';
+                document.body.style.cursor = '';
+            }
+        });
+
+        renderer.domElement.addEventListener('mouseleave', () => {
+            if (tooltipEl) tooltipEl.style.display = 'none';
+            document.body.style.cursor = '';
+        });
+
+        if (chkHotspots) {
+            chkHotspots.addEventListener('change', () => {
+                if (!chkHotspots.checked && tooltipEl) tooltipEl.style.display = 'none';
+            });
+        }
 
         // --- 10. LÓGICA DE SIMULACIÓN Y ACTUALIZACIONES ---
         const sliderHora = document.getElementById('slider-hora');
@@ -1413,12 +1688,21 @@
             tempAguaGlobal = tempAgua;
 
             // Actualización de materiales térmicos en tiempo real según la hora del sol:
-            // 1. Tubería roja de retorno cambia de color: a las 6 AM es azul (fría); a mediodía es roja viva
+            // 1. Tubería ROJA de retorno: a las 6 AM es azul fría, al mediodía es rojo/naranja caliente
             matRetorno.color.copy(obtenerColorTermico(tempPlaca));
-            // 2. Placa absorbedora cambia de tono térmico
+            // 2. Tubería AZUL de bajada: siempre fría (temperatura de red), pero refleja la hora
+            //    Antes de las 8 AM es aún muy fría; conforme el día avanza sube ligeramente
+            matBaja.color.copy(obtenerColorTermico(Math.min(tempAmbActual + 4, 28)));
+            // 3. Placa absorbedora cambia de tono térmico
             matPlaca.color.copy(obtenerColorTermico(tempPlaca));
-            // 3. Textura de estratificación del termotanque (azul abajo, rojo arriba según temperatura)
-            actualizarTexturaEstratificacion(tempAmbActual, tempAgua);
+            // 4. Estratificación dinámica del termotanque:
+            //    El factor indica cuánto del volumen del tanque ya está caliente.
+            //    A las 6 AM → factor=0 (todo frío). Crece acumulativamente con el calor solar.
+            //    Usamos la temperatura del agua relativa a sus extremos como proxy del llenado caliente.
+            const tMin16 = 16.0;
+            const tMax68 = 68.0;
+            factorEstrat = Math.max(0, Math.min(1, (tempAgua - tMin16) / (tMax68 - tMin16)));
+            actualizarTexturaEstratificacion(tempAmbActual, tempAgua, factorEstrat);
 
             // Actualización de Textos en la Interfaz
             const horaInt = Math.floor(hora);
@@ -1474,9 +1758,11 @@
             // La caja exterior baja para mostrar la base estructural
             cajaMesh.position.y = -exp * 0.20;
 
-            // Separación del corte del termotanque en despiece
-            tanqueExtMesh.position.x = exp * 0.28;
-            aislanteMesh.position.x = exp * 0.14;
+            // Separación del corte del termotanque horizontal en despiece CAD
+            tanqueExtMesh.position.z = exp * 0.22;
+            tanqueExtMesh.position.x = exp * 0.16;
+            aislanteMesh.position.z = exp * 0.11;
+            aislanteMesh.position.x = exp * 0.08;
 
             // Ajustar visualización de toggles
             etiquetasGroup.visible = chkEtiquetas.checked;
@@ -1650,6 +1936,21 @@
                     if (posiciones[i] < 0) posiciones[i] = 4.5;
                 }
                 geomRayos.attributes.position.needsUpdate = true;
+            }
+
+            // Animación de pulso de los hotspots interactivos
+            if (chkHotspots && chkHotspots.checked) {
+                const t = Date.now() * 0.0038;
+                hotspotMeshes.forEach((m, i) => {
+                    m.visible = true;
+                    // Cada esfera pulsa con una fase ligeramente distinta
+                    const pulse = 0.72 + 0.28 * Math.sin(t + i * 0.8);
+                    m.material.opacity = pulse * 0.90;
+                    const s = 0.88 + 0.22 * pulse;
+                    m.scale.setScalar(s);
+                });
+            } else {
+                hotspotMeshes.forEach(m => { m.visible = false; });
             }
 
             renderer.render(scene, camera);
