@@ -1352,19 +1352,19 @@
         codoSupMesh.position.copy(pCodoDerAlto);
         tuberiasGroup.add(codoSupMesh);
 
-        // Bridas / Niples de cobre de acople industrial reforzados
+        // Bridas / Niples de CPVC de acople industrial reforzados
         const geomBrida = new THREE.CylinderGeometry(0.024, 0.024, 0.05, 16);
-        const bridaFria = new THREE.Mesh(geomBrida, matCobre);
+        const bridaFria = new THREE.Mesh(geomBrida, matCPVC);
         bridaFria.rotation.z = Math.PI / 2;
         bridaFria.position.copy(pEntradaColector);
         mainGroup.add(bridaFria);
 
-        const bridaCaliente = new THREE.Mesh(geomBrida, matCobre);
+        const bridaCaliente = new THREE.Mesh(geomBrida, matCPVC);
         bridaCaliente.rotation.z = Math.PI / 2;
         bridaCaliente.position.copy(pSalidaColector);
         mainGroup.add(bridaCaliente);
 
-        const bridaTanqueCaliente = new THREE.Mesh(geomBrida, matCobre);
+        const bridaTanqueCaliente = new THREE.Mesh(geomBrida, matCPVC);
         bridaTanqueCaliente.rotation.z = Math.PI / 2;
         bridaTanqueCaliente.position.copy(pEntradaTanqueCaliente);
         mainGroup.add(bridaTanqueCaliente);
