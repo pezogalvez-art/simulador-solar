@@ -2178,7 +2178,7 @@
             renderer.render(scene, camera);
         }
 
-        // --- CARGA DINÁMICA DE DATOS METEOROLÓGICOS (24 DEPARTAMENTOS + CALLAO + CASO BASE) ---
+        // --- CARGA DINÁMICA DE DATOS METEOROLÓGICOS (24 DEPARTAMENTOS + CALLAO) ---
         async function cargarDatosSenamhi() {
             try {
                 const respuesta = await fetch(`./datos_senamhi.json?t=${Date.now()}`);
@@ -2194,11 +2194,7 @@
                     Object.keys(datosCiudades).forEach(k => delete datosCiudades[k]);
                     select.innerHTML = '';
 
-                    const claves = clavesValidas.sort((a, b) => {
-                        if (a.startsWith('📋')) return -1;
-                        if (b.startsWith('📋')) return 1;
-                        return a.localeCompare(b, 'es');
-                    });
+                    const claves = clavesValidas.sort((a, b) => a.localeCompare(b, 'es'));
 
                     claves.forEach(clave => {
                         datosCiudades[clave] = localidades[clave];
