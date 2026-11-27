@@ -1921,7 +1921,7 @@
 
             // Actualización de Ficha Oficial SENAMHI
             const elFecha = document.getElementById('senamhi-fecha');
-            if (elFecha) {
+            if (elFecha && !elFecha.innerText.startsWith("SENAMHI •")) {
                 const hoy = new Date();
                 const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Set', 'Oct', 'Nov', 'Dic'];
                 elFecha.innerText = `Boletín Diario • ${hoy.getDate()} ${meses[hoy.getMonth()]}`;
@@ -2169,9 +2169,52 @@
             renderer.render(scene, camera);
         }
 
+        // --- CARGA DINÁMICA DE DATOS SENAMHI (24 DEPARTAMENTOS + CALLAO) ---
+        async function cargarDatosSenamhi() {
+            try {
+                const respuesta = await fetch(`./datos_senamhi.json?t=${Date.now()}`);
+                if (!respuesta.ok) return;
+                const payload = await respuesta.json();
+                const localidades = payload.ciudades || payload;
+
+                const select = document.getElementById('select-ciudad');
+                const ciudadPrevia = select.value;
+                const clavesValidas = Object.keys(localidades).filter(k => k !== 'actualizado');
+
+                if (clavesValidas.length > 0) {
+                    // Reemplazamos las opciones del selector con todo el Perú extraído del SENAMHI
+                    select.innerHTML = '';
+
+                    clavesValidas.sort((a, b) => a.localeCompare(b, 'es')).forEach(clave => {
+                        datosCiudades[clave] = localidades[clave];
+                        const opt = document.createElement('option');
+                        opt.value = clave;
+                        opt.textContent = `${clave} (${localidades[clave].radMax} W/m² - ${localidades[clave].cielo})`;
+                        select.appendChild(opt);
+                    });
+
+                    // Mantiene seleccionada la ciudad previa si existe en la lista (ej. Cusco o Loreto - Iquitos)
+                    if (datosCiudades[ciudadPrevia]) {
+                        select.value = ciudadPrevia;
+                    }
+                }
+
+                // Muestra la fecha/hora real de extracción del SENAMHI en la tarjeta azul
+                if (payload.actualizado) {
+                    const elFecha = document.getElementById('senamhi-fecha');
+                    if (elFecha) elFecha.innerText = `SENAMHI • ${payload.actualizado}`;
+                }
+
+                actualizarSimulacion();
+            } catch (error) {
+                console.warn("Usando catálogo base local de 7 ciudades:", error);
+            }
+        }
+
         // Iniciar
         actualizarSimulacion();
         animate();
+        cargarDatosSenamhi();
 
         // Manejo de Redimensionado de Ventana
         window.addEventListener('resize', () => {
