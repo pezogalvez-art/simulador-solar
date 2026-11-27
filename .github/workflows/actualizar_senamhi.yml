@@ -1,0 +1,39 @@
+name: Actualización Automática SENAMHI Perú
+
+on:
+  schedule:
+    # Se ejecuta automáticamente cada 1 hora (:00 de cada hora UTC)
+    - cron: '0 * * * *'
+  # Permite también ejecutar la actualización manualmente desde la pestaña "Actions" en GitHub
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4
+
+      - name: Ejecutar recolección de datos SENAMHI
+        run: |
+          python actualizar_senamhi.py
+
+      - name: Guardar y subir datos_senamhi.json actualizado
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action Bot - SENAMHI"
+          git add datos_senamhi.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto: actualización periódica datos SENAMHI [skip ci]" && git push)
