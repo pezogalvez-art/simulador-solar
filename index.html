@@ -448,7 +448,8 @@
         <div class="control-group">
             <label for="select-ciudad">📍 Ubicación en el Perú:</label>
             <select id="select-ciudad">
-                <option value="Cusco">Cusco (2,300 W/m² - Radiación Muy Alta)</option>
+                <option value="📋 Caso Base Informe (Cusco 5.61 h)">📋 Caso Base Informe (Cusco 5.61 h · 980 W/m²)</option>
+                <option value="Cusco">Cusco (980 W/m² - Radiación Muy Alta)</option>
                 <option value="Arequipa">Arequipa (Radiación Extrema / Cielo Despejado)</option>
                 <option value="Puno">Puno (Alta Radiación Solar / Clima Frío)</option>
                 <option value="Ica">Ica (Excelente Sol Todo el Año)</option>
@@ -461,7 +462,7 @@
         <!-- FICHA OFICIAL ESTACIÓN METEOROLÓGICA SENAMHI -->
         <div class="senamhi-box">
             <div class="senamhi-header">
-                <span class="senamhi-logo">🇵🇪 SENAMHI PERÚ</span>
+                <span class="senamhi-logo">🇵🇪 CLIMA PERÚ · API EN VIVO</span>
                 <span class="senamhi-date" id="senamhi-fecha">Estación Oficial</span>
             </div>
             <div class="senamhi-station" id="senamhi-estacion">📍 Estación: Granja Kayra (Cusco)</div>
@@ -850,7 +851,7 @@
                 vientoTexto: "12 km/h (Brisa andina)",
                 humedad: "38%",
                 tMin: 3.1,
-                desc: "Gran radiación por altitud andina. Noches y madrugadas frías requieren excelente aislamiento térmico (PUR 50mm) para conservar el calor acumulado."
+                desc: "Gran radiación por altitud andina. Noches y madrugadas frías requieren excelente aislamiento térmico (Tecnopor EPS 50 mm) para conservar el calor acumulado."
             },
             "Arequipa": {
                 estacion: "Estación La Pampilla (Arequipa)",
@@ -1029,7 +1030,7 @@
         });
         const matCaja = new THREE.MeshStandardMaterial({ color: 0x8b5a2b, roughness: 0.7, metalness: 0.05 }); // Madera tratada de caja
         const matPlaca = new THREE.MeshStandardMaterial({ color: 0x111317, roughness: 0.85, metalness: 0.05 });
-        const matCobre = new THREE.MeshStandardMaterial({ color: 0xb45309, metalness: 0.85, roughness: 0.25 });
+        const matCPVC = new THREE.MeshStandardMaterial({ color: 0xc27803, roughness: 0.35, metalness: 0.20 }); // Tuberías CPVC 1/2" (NTP 399.072)
         const matSoporte = new THREE.MeshStandardMaterial({ color: 0xa06d3b, roughness: 0.75, metalness: 0.05 }); // Madera listones 2"x2"
         const matPoliuretano = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.85 }); // Tecnopor EPS (blanco celular)
         const matTanqueMetal = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.6, metalness: 0.05 }); // Chaqueta exterior de Tecnopor blanco
@@ -1136,20 +1137,20 @@
         // Tubos longitudinales ascendentes (acostados sobre la placa del colector)
         for (let i = 0; i < numTubos; i++) {
             const xPos = -anchoParrilla / 2 + i * pasoX;
-            const tubo = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.011, largoTubo, 16), matCobre);
+            const tubo = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.011, largoTubo, 16), matCPVC);
             tubo.rotation.x = Math.PI / 2; // Acostado a lo largo del plano inclinado del colector
             tubo.position.set(xPos, 0.035, 0);
             tubosGroup.add(tubo);
         }
 
         // Cabezal inferior (recolector de agua fría)
-        const cabezalInf = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, anchoParrilla + 0.08, 16), matCobre);
+        const cabezalInf = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, anchoParrilla + 0.08, 16), matCPVC);
         cabezalInf.rotation.z = Math.PI / 2;
         cabezalInf.position.set(0, 0.035, largoTubo / 2);
         tubosGroup.add(cabezalInf);
 
         // Cabezal superior (salida de agua caliente)
-        const cabezalSup = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, anchoParrilla + 0.08, 16), matCobre);
+        const cabezalSup = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, anchoParrilla + 0.08, 16), matCPVC);
         cabezalSup.rotation.z = Math.PI / 2;
         cabezalSup.position.set(0, 0.035, -largoTubo / 2);
         tubosGroup.add(cabezalSup);
@@ -1919,9 +1920,9 @@
                 elEficiencia.innerText = eficiencia > 0 ? `${eficiencia.toFixed(1)}%` : '0.0% (Sin Sol)';
             }
 
-            // Actualización de Ficha Oficial SENAMHI
+            // Actualización de Ficha Oficial Meteorológica
             const elFecha = document.getElementById('senamhi-fecha');
-            if (elFecha && !elFecha.innerText.startsWith("SENAMHI •")) {
+            if (elFecha && !elFecha.innerText.startsWith("API •") && !elFecha.innerText.startsWith("SENAMHI •")) {
                 const hoy = new Date();
                 const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Set', 'Oct', 'Nov', 'Dic'];
                 elFecha.innerText = `Boletín Diario • ${hoy.getDate()} ${meses[hoy.getMonth()]}`;
@@ -2169,7 +2170,7 @@
             renderer.render(scene, camera);
         }
 
-        // --- CARGA DINÁMICA DE DATOS SENAMHI (24 DEPARTAMENTOS + CALLAO) ---
+        // --- CARGA DINÁMICA DE DATOS METEOROLÓGICOS (24 DEPARTAMENTOS + CALLAO + CASO BASE) ---
         async function cargarDatosSenamhi() {
             try {
                 const respuesta = await fetch(`./datos_senamhi.json?t=${Date.now()}`);
@@ -2179,35 +2180,43 @@
 
                 const select = document.getElementById('select-ciudad');
                 const ciudadPrevia = select.value;
-                const clavesValidas = Object.keys(localidades).filter(k => k !== 'actualizado');
+
+                const clavesValidas = Object.keys(localidades).filter(k => k !== 'actualizado' && k !== 'fuente');
 
                 if (clavesValidas.length > 0) {
-                    // Reemplazamos las opciones del selector con todo el Perú extraído del SENAMHI
+                    // Limpiamos claves antiguas para evitar falsos positivos
+                    Object.keys(datosCiudades).forEach(k => delete datosCiudades[k]);
                     select.innerHTML = '';
 
-                    clavesValidas.sort((a, b) => a.localeCompare(b, 'es')).forEach(clave => {
+                    // Ordenamos manteniendo el Caso Base al inicio si existe
+                    const claves = clavesValidas.sort((a, b) => {
+                        if (a.startsWith('📋')) return -1;
+                        if (b.startsWith('📋')) return 1;
+                        return a.localeCompare(b, 'es');
+                    });
+
+                    claves.forEach(clave => {
                         datosCiudades[clave] = localidades[clave];
                         const opt = document.createElement('option');
                         opt.value = clave;
-                        opt.textContent = `${clave} (${localidades[clave].radMax} W/m² - ${localidades[clave].cielo})`;
+                        opt.textContent = `${clave} (${localidades[clave].radMax} W/m² · ${localidades[clave].cielo})`;
                         select.appendChild(opt);
                     });
 
-                    // Mantiene seleccionada la ciudad previa si existe en la lista (ej. Cusco o Loreto - Iquitos)
-                    if (datosCiudades[ciudadPrevia]) {
-                        select.value = ciudadPrevia;
-                    }
+                    // Verifica si la opción realmente existe en el <select>; si no, toma la primera
+                    const existeOpcion = Array.from(select.options).some(o => o.value === ciudadPrevia);
+                    select.value = existeOpcion ? ciudadPrevia : (select.options[0]?.value || '');
                 }
 
-                // Muestra la fecha/hora real de extracción del SENAMHI en la tarjeta azul
+                // Muestra la fecha/hora real de extracción en la tarjeta
                 if (payload.actualizado) {
                     const elFecha = document.getElementById('senamhi-fecha');
-                    if (elFecha) elFecha.innerText = `SENAMHI • ${payload.actualizado}`;
+                    if (elFecha) elFecha.innerText = `API • ${payload.actualizado}`;
                 }
 
                 actualizarSimulacion();
             } catch (error) {
-                console.warn("Usando catálogo base local de 7 ciudades:", error);
+                console.warn("Usando catálogo base local de ciudades:", error);
             }
         }
 
