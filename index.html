@@ -1828,7 +1828,16 @@
 
         function actualizarSimulacion() {
             ciudadActual = selectCiudad.value;
-            const datos = datosCiudades[ciudadActual];
+            let datos = datosCiudades[ciudadActual];
+            if (!datos) {
+                const primerClave = Object.keys(datosCiudades)[0];
+                if (primerClave) {
+                    ciudadActual = primerClave;
+                    selectCiudad.value = primerClave;
+                    datos = datosCiudades[primerClave];
+                }
+            }
+            if (!datos) return;
 
             const hora = parseFloat(sliderHora.value);
             const exp = parseFloat(sliderExp.value);
