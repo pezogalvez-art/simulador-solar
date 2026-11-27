@@ -1,4 +1,4 @@
-import json
+﻿import json
 import os
 import time
 from datetime import datetime, timezone, timedelta
@@ -86,22 +86,6 @@ def main():
         "ciudades": {}
     }
 
-    # Opción Base Reproducible de Informe (Garantiza verificación académica 100% fiel al documento)
-    salida["ciudades"]["📋 Caso Base Informe (Cusco 5.61 h)"] = {
-        "estacion": "Estación Granja Kayra (Cusco) · Caso Base de Diseño",
-        "altitud": "3,219 msnm",
-        "cielo": "Despejado / Radiación Alta",
-        "tempMin": 4.2,
-        "tempMax": 21.8,
-        "tempAmb": 14.5,
-        "radMax": 980,
-        "iuv": 14,
-        "vientoVel": 12.0,
-        "vientoTexto": "12 km/h (Viento moderado)",
-        "humedad": "52%",
-        "tMin": 5.61,
-        "desc": "Parámetros base certificados en la Memoria de Cálculo del Prototipo Solar Pasivo (200 L)."
-    }
 
     print("=== INICIANDO RECOLECCIÓN EN VIVO DE DATOS METEOROLÓGICOS (PERÚ) ===")
     for nombre, meta in ESTACIONES_PERU.items():
@@ -128,3 +112,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
