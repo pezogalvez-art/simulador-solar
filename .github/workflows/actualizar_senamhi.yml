@@ -31,9 +31,9 @@ jobs:
         run: |
           python actualizar_senamhi.py
 
-      - name: Guardar y subir datos_senamhi.json actualizado
+      - name: Guardar y subir datos actualizados e historial
         run: |
           git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action Bot - SENAMHI"
-          git add datos_senamhi.json
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto: actualización periódica datos SENAMHI [skip ci]" && git push)
+          git config --local user.name "GitHub Action Bot - Clima Peru"
+          git add datos_senamhi.json historial/
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto: actualización horaria de clima real Perú [skip ci]" && git push)
